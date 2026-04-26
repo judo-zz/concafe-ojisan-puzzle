@@ -534,7 +534,7 @@ function renderGuest(el, guest) {
     ${read ? `<span class="relation-badge ${read.tone}">${read.icon}</span>` : ""}
     <span class="guest-name">${guest.label}</span>
     <span class="guest-meta"><span class="cast-dot"></span>推し:${casts[guest.favorite].name}${target}</span>
-    <span class="guest-meta">満足ターン ${turns}</span>
+    <span class="guest-meta guest-turns">満足ターン ${turns}</span>
     ${readout}
   `;
 }
