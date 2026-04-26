@@ -325,18 +325,18 @@ h1 {
 .message {
   height: 96px;
   min-height: 0;
-  padding: 7px;
+  padding: 6px;
   border: 3px solid var(--line);
   border-radius: 16px;
   background: var(--paper);
   box-shadow: 0 4px 0 rgba(53, 40, 31, 0.16);
-  overflow: hidden;
+  overflow: visible;
 }
 
 .queue-card > span {
   display: inline-block;
-  margin: 0 0 3px 0;
-  padding: 3px 9px;
+  margin: 0 0 2px 0;
+  padding: 2px 9px;
   border: 3px solid var(--line);
   border-radius: 999px;
   background: var(--pink);
@@ -362,17 +362,17 @@ h1 {
 .guest-chip {
   position: relative;
   display: grid;
-  grid-template-columns: 52px minmax(0, 1fr);
+  grid-template-columns: 50px minmax(0, 1fr);
   align-items: center;
   column-gap: 6px;
   row-gap: 0;
-  height: 58px;
-  overflow: hidden;
+  height: 54px;
+  overflow: visible;
   padding-right: 29px;
 }
 
 .queue-card-current .guest-chip {
-  grid-template-columns: 58px minmax(0, 1fr);
+  grid-template-columns: 56px minmax(0, 1fr);
   column-gap: 8px;
   padding-right: 0;
 }
@@ -381,7 +381,7 @@ h1 {
   display: grid;
   grid-template-columns: 1fr;
   place-items: center;
-  height: 58px;
+  height: 54px;
 }
 
 .guest-chip.small .guest-name,
@@ -816,12 +816,12 @@ h1 {
 }
 
 .guest-chip .oji-face {
-  width: 48px;
+  width: 50px;
   max-width: none;
 }
 
 .guest-chip.small .oji-face {
-  width: 52px;
+  width: 50px;
 }
 
 .tutorial {
