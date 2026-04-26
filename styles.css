@@ -362,6 +362,12 @@ h1 {
   padding-right: 29px;
 }
 
+.queue-card-current .guest-chip {
+  grid-template-columns: 58px minmax(0, 1fr);
+  column-gap: 8px;
+  padding-right: 0;
+}
+
 .guest-chip.small {
   display: grid;
   grid-template-columns: 1fr;
@@ -381,6 +387,20 @@ h1 {
   font-weight: 950;
   line-height: 1.05;
   overflow-wrap: anywhere;
+}
+
+.queue-card-current .guest-name {
+  font-size: clamp(1.22rem, 5.5vw, 1.48rem);
+  line-height: 1;
+  white-space: nowrap;
+  word-break: keep-all;
+  overflow-wrap: normal;
+}
+
+.queue-card-current .guest-meta,
+.queue-card-current .placement,
+.queue-card-current .relation-badge {
+  display: none;
 }
 
 .guest-meta,
