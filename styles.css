@@ -593,16 +593,13 @@ h1 {
 }
 
 .oji-face {
-  --skin: #ffd8a8;
   position: relative;
   width: 100%;
   max-width: 52px;
   aspect-ratio: 1;
   display: block;
-  border: 4px solid var(--line);
-  border-radius: 50%;
-  background: var(--skin);
-  box-shadow: inset 0 -7px rgba(53, 40, 31, 0.08), 0 2px 0 rgba(53, 40, 31, 0.22);
+  object-fit: contain;
+  filter: drop-shadow(0 3px 0 rgba(53, 40, 31, 0.2));
 }
 
 .guest-chip .oji-face {
@@ -612,135 +609,6 @@ h1 {
 
 .guest-chip.small .oji-face {
   width: 52px;
-}
-
-.hair {
-  position: absolute;
-  left: -2px;
-  right: -2px;
-  top: -2px;
-  height: 38%;
-  border-radius: 999px 999px 36% 36%;
-  background: #3c342e;
-  clip-path: polygon(0 0, 34% 0, 30% 78%, 45% 58%, 50% 0, 100% 0, 100% 48%, 0 48%);
-}
-
-.eyes::before,
-.eyes::after {
-  content: "";
-  position: absolute;
-  top: 42%;
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--line);
-}
-
-.eyes::before {
-  left: 29%;
-}
-
-.eyes::after {
-  right: 29%;
-}
-
-.mouth {
-  position: absolute;
-  left: 50%;
-  top: 59%;
-  width: 16px;
-  height: 8px;
-  transform: translateX(-50%);
-  border-bottom: 3px solid var(--line);
-  border-radius: 0 0 999px 999px;
-}
-
-.cheeks::before,
-.cheeks::after {
-  content: "";
-  position: absolute;
-  top: 57%;
-  width: 7px;
-  height: 5px;
-  border-radius: 50%;
-  background: #ff9a92;
-  opacity: 0.75;
-}
-
-.cheeks::before {
-  left: 16%;
-}
-
-.cheeks::after {
-  right: 16%;
-}
-
-.prop {
-  position: absolute;
-  right: -10px;
-  top: -10px;
-  min-width: 22px;
-  height: 22px;
-  display: grid;
-  place-items: center;
-  border: 3px solid var(--line);
-  border-radius: 999px;
-  background: #fff;
-  color: var(--line);
-  font-size: 0.75rem;
-  font-weight: 950;
-  line-height: 1;
-}
-
-.face-futoi .prop,
-.face-vip .prop {
-  background: var(--yellow);
-}
-
-.face-gachikoi .eyes::before,
-.face-gachikoi .eyes::after {
-  width: 10px;
-  height: 10px;
-  background: var(--pink);
-  clip-path: polygon(50% 88%, 0 35%, 18% 0, 50% 20%, 82% 0, 100% 35%);
-}
-
-.face-claimer {
-  --skin: #b9b9b9;
-}
-
-.face-claimer .eyes::before,
-.face-claimer .eyes::after,
-.face-doutan .eyes::before,
-.face-doutan .eyes::after {
-  height: 4px;
-  border-radius: 0;
-}
-
-.face-claimer .mouth,
-.face-doutan .mouth {
-  top: 66%;
-  border-top: 3px solid var(--line);
-  border-bottom: 0;
-  border-radius: 999px 999px 0 0;
-}
-
-.face-uwaki .eyes::before,
-.face-uwaki .eyes::after {
-  width: 13px;
-  height: 7px;
-  border-radius: 999px;
-  background: #111;
-}
-
-.face-usui {
-  --skin: #f2ddc3;
-}
-
-.face-vip .prop {
-  right: -13px;
-  min-width: 30px;
-  font-size: 0.58rem;
 }
 
 .tutorial {

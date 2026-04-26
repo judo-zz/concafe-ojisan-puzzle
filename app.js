@@ -530,23 +530,8 @@ function renderGuest(el, guest) {
 }
 
 function guestFace(guest) {
-  const props = {
-    futoi: "♛",
-    gachikoi: "♡",
-    claimer: "怒",
-    vip: "VIP",
-    uwaki: "∞",
-    usui: "",
-    doutan: "む",
-  };
   return `
-    <span class="oji-face face-${guest.id}" aria-hidden="true">
-      <span class="hair"></span>
-      <span class="eyes"></span>
-      <span class="mouth"></span>
-      <span class="cheeks"></span>
-      <span class="prop">${props[guest.id] || ""}</span>
-    </span>
+    <img class="oji-face face-${guest.id}" src="assets/ojisan/${guest.id}.svg" alt="" aria-hidden="true">
   `;
 }
 
