@@ -18,7 +18,7 @@ const guestTypes = [
     base: 4,
     points: 95,
     weight: 16,
-    note: "財布の厚みだけが、たまに空気を救う。",
+    note: "太客きた！",
   },
   {
     id: "usui",
@@ -27,7 +27,7 @@ const guestTypes = [
     base: 3,
     points: 22,
     weight: 22,
-    note: "軽い会釈と短い滞在。店はそういう日もある。",
+    note: "ふつう！",
   },
   {
     id: "gachikoi",
@@ -36,7 +36,7 @@ const guestTypes = [
     base: 5,
     points: 76,
     weight: 14,
-    note: "愛は処理速度を上げる。だいたい同じだけ事故も増やす。",
+    note: "ハート多め！",
   },
   {
     id: "uwaki",
@@ -45,7 +45,7 @@ const guestTypes = [
     base: 3,
     points: 36,
     weight: 18,
-    note: "誰にでも優しい客は、誰の記憶にも少し薄い。",
+    note: "どこでもOK！",
   },
   {
     id: "claimer",
@@ -54,7 +54,7 @@ const guestTypes = [
     base: 4,
     points: 64,
     weight: 11,
-    note: "置く場所より、置いた後の時間が問題になる。",
+    note: "早めに処理！",
   },
   {
     id: "vip",
@@ -63,7 +63,7 @@ const guestTypes = [
     base: 5,
     points: 135,
     weight: 9,
-    note: "指名は強い。縛りも強い。",
+    note: "指名あり！",
   },
   {
     id: "doutan",
@@ -72,7 +72,7 @@ const guestTypes = [
     base: 4,
     points: 72,
     weight: 10,
-    note: "隣を見るな。見るから悪い。",
+    note: "被り注意！",
   },
 ];
 
@@ -157,7 +157,7 @@ function resetGame() {
   addCombo("シャンパンコール", "全列から1人ずつ消去 / 空気大UP");
   addCombo("ボトル入り（ガチ恋）", "空気UP / 処理少し進行");
   addCombo("推し一致（太客）", "空気 +5 / 売上 +48,000");
-  messageEl.textContent = "今日もシフトが始まる。彼女たちは笑顔を作り、私はおじさんを配置する。";
+  messageEl.textContent = "推し席へポイ！";
   render();
 }
 
@@ -237,7 +237,7 @@ function applyPlacementPressure(tile) {
   const col = tile.col;
   if (guest.id === "vip" && guest.vipTarget !== null && col !== guest.vipTarget) {
     changeAmbient(-9);
-    say("VIPを指名外に置いた。空気には、そういう音がある。");
+    say("指名外だよ！");
   } else if (col === guest.favorite || guest.id === "uwaki") {
     changeAmbient(2);
   } else {
@@ -249,7 +249,7 @@ function applyPlacementPressure(tile) {
     const penalty = guest.id === "gachikoi" || guest.id === "doutan" ? -11 : -5;
     changeAmbient(penalty);
     tile.turns += guest.id === "doutan" ? 2 : 1;
-    say("推し被り。笑顔はある。空気はない。");
+    say("推し被り！");
   } else {
     say(guest.note);
   }
@@ -284,7 +284,7 @@ function stepService() {
       if (tile.guest.id === "claimer" && tile.age > 0 && tile.age % 3 === 0) {
         state.complaints += 1;
         changeAmbient(-10);
-        say("クレーマーが沈黙を破った。店の評価は、見えないところで落ちる。");
+        say("クレーム発生！");
       }
 
       if (tile.turns <= 0) {
@@ -330,14 +330,14 @@ function handleCombo(col) {
     changeAmbient(12);
     speedColumn(col);
     addCombo(`${casts[col].name}列`, "ボトル入り");
-    say("ボトルが入った。場の全員が、少しだけ同じ方向を向く。");
+    say("ボトル入り！");
   }
 
   if (state.streaks[col] > 0 && state.streaks[col] % 5 === 0) {
     changeAmbient(22);
     clearOneEachColumn();
     addCombo(`${casts[col].name}列`, "シャンパンコール");
-    say("シャンパンコール。意味より先に、音が店を支配する。");
+    say("シャンパン！");
   }
 }
 
@@ -365,7 +365,7 @@ function maybeRegularize(guest, points) {
   const chance = Math.min(0.28, points / 800);
   if (Math.random() < chance && !state.regulars.some((item) => item.label === guest.label)) {
     state.regulars.push({ label: guest.label, favorite: casts[guest.favorite].name });
-    say(`${guest.label}が常連化した。関係は、たいてい処理後に始まる。`);
+    say(`${guest.label}が常連に！`);
   }
 }
 
@@ -479,9 +479,7 @@ function tileElement(tile) {
   wrapper.style.setProperty("--chip", tile.guest.color);
   wrapper.style.setProperty("--favorite", casts[tile.guest.favorite].color);
   wrapper.innerHTML = `
-    <span class="badge">${tile.guest.label.slice(0, 2)}</span>
-    <span class="oshi-dot" title="推し: ${casts[tile.guest.favorite].name}"></span>
-    <span class="mark"></span>
+    ${guestFace(tile.guest)}
     <span class="turns">${Math.max(0, tile.turns)}</span>
   `;
   return wrapper;
@@ -522,11 +520,33 @@ function renderGuest(el, guest) {
   const readout = read ? `<span class="placement ${read.tone}">${read.label}</span>` : "";
   const turns = serviceTurns(guest, state.selectedCol);
   el.innerHTML = `
+    ${guestFace(guest)}
     ${read ? `<span class="relation-badge ${read.tone}">${read.icon}</span>` : ""}
     <span class="guest-name">${guest.label}</span>
     <span class="guest-meta"><span class="cast-dot"></span>推し:${casts[guest.favorite].name}${target}</span>
     <span class="guest-meta">満足ターン ${turns}</span>
     ${readout}
+  `;
+}
+
+function guestFace(guest) {
+  const props = {
+    futoi: "♛",
+    gachikoi: "♡",
+    claimer: "怒",
+    vip: "VIP",
+    uwaki: "∞",
+    usui: "",
+    doutan: "む",
+  };
+  return `
+    <span class="oji-face face-${guest.id}" aria-hidden="true">
+      <span class="hair"></span>
+      <span class="eyes"></span>
+      <span class="mouth"></span>
+      <span class="cheeks"></span>
+      <span class="prop">${props[guest.id] || ""}</span>
+    </span>
   `;
 }
 
@@ -557,7 +577,7 @@ function gameLoop(now) {
     dropFill.style.width = `${Math.max(0, 100 - dropProgress * 100)}%`;
 
     if (dropProgress >= 1) {
-      say("迷っている間にも客は落ちる。営業中だからだ。");
+      say("自動でポイ！");
       placeCurrent();
     }
 
