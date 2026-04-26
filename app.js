@@ -1,6 +1,7 @@
 const COLS = 5;
 const ROWS = 5;
 const SHIFT_SECONDS = 150;
+const BEST_SCORE_KEY = "ojisan-poipoi-best-score-v2";
 
 const casts = [
   { name: "みじゅ", trait: "太客処理のプロ", detail: "太客短縮 / 売上UP", color: "#2fb8ff", asset: "assets/casts/eigyo.svg" },
@@ -95,6 +96,8 @@ const state = {
   tutorialTimer: null,
   lastStep: 0,
   lastSecond: 0,
+  bestScore: loadBestScore(),
+  lastResult: null,
 };
 
 const startScreen = document.querySelector("#startScreen");
@@ -104,6 +107,7 @@ const castsEl = document.querySelector("#casts");
 const ambientValue = document.querySelector("#ambientValue");
 const ambientFill = document.querySelector("#ambientFill");
 const scoreValue = document.querySelector("#scoreValue");
+const bestValue = document.querySelector("#bestValue");
 const timeValue = document.querySelector("#timeValue");
 const complaintValue = document.querySelector("#complaintValue");
 const complaintWarning = document.querySelector("#complaintWarning");
@@ -115,6 +119,10 @@ const comboList = document.querySelector("#comboList");
 const regularsEl = document.querySelector("#regulars");
 const overlay = document.querySelector("#gameOver");
 const tutorial = document.querySelector("#tutorial");
+const floatLayer = document.querySelector("#floatLayer");
+const resultReason = document.querySelector("#resultReason");
+const shareButton = document.querySelector("#shareButton");
+let audioContext = null;
 
 function weightedGuest() {
   const total = guestTypes.reduce((sum, guest) => sum + guest.weight, 0);
@@ -138,6 +146,7 @@ function makeGuest(type) {
 }
 
 function resetGame() {
+  initAudio();
   state.started = true;
   state.board = Array.from({ length: ROWS }, () => Array(COLS).fill(null));
   state.current = weightedGuest();
@@ -150,11 +159,13 @@ function resetGame() {
   state.streaks = [0, 0, 0, 0, 0];
   state.regulars = [];
   state.running = true;
+  state.lastResult = null;
   state.tickMs = 1700;
   state.lastStep = performance.now();
   state.lastSecond = performance.now();
   setDropWindow(performance.now());
   overlay.classList.add("hidden");
+  floatLayer.innerHTML = "";
   showTutorial();
   comboList.innerHTML = "";
   addCombo("シャンパンコール", "全列から1人ずつ消去 / 空気大UP");
@@ -165,6 +176,7 @@ function resetGame() {
 }
 
 function startGame() {
+  initAudio();
   startScreen.hidden = true;
   gamePanel.hidden = false;
   resetGame();
@@ -200,17 +212,20 @@ function tileForGuest(guest, col) {
 
 function placeCurrent(col = state.selectedCol) {
   if (!state.running) return;
+  initAudio();
 
   const row = lowestOpenRow(col);
   if (row === -1) {
     changeAmbient(-10);
-    endGame("盤面上限到達。感情は積み上がり、やがて店の天井に触れた。");
+    endGame("盤面上限到達。感情は積み上がり、やがて店の天井に触れた。", "列が満席");
     return;
   }
 
   const tile = tileForGuest(state.current, col);
   state.board[row][col] = tile;
-  applyPlacementPressure(tile);
+  const feedback = applyPlacementPressure(tile);
+  showFloat(feedback.text, feedback.tone);
+  playSound(feedback.sound);
   state.current = state.next;
   state.next = weightedGuest();
   state.selectedCol = col;
@@ -228,13 +243,17 @@ function lowestOpenRow(col) {
 function applyPlacementPressure(tile) {
   const guest = tile.guest;
   const col = tile.col;
+  let feedback;
   if (guest.id === "vip" && guest.vipTarget !== null && col !== guest.vipTarget) {
     changeAmbient(-9);
     say("指名外だよ！");
+    feedback = { text: "指名外 -9", tone: "bad", sound: "bad" };
   } else if (col === guest.favorite || guest.id === "uwaki") {
     changeAmbient(2);
+    feedback = { text: guest.id === "uwaki" ? "どこでもOK +2" : "推し一致 +2", tone: "good", sound: "match" };
   } else {
     changeAmbient(-2);
+    feedback = { text: "推し違い -2", tone: "warn", sound: "place" };
   }
 
   if (hasFavoriteNeighbor(tile)) {
@@ -243,9 +262,12 @@ function applyPlacementPressure(tile) {
     changeAmbient(penalty);
     tile.turns += guest.id === "doutan" ? 2 : 1;
     say("推し被り！");
+    feedback = { text: `推し被り ${penalty}`, tone: "warn", sound: "bad" };
   } else {
     say(guest.note);
   }
+
+  return feedback;
 }
 
 function hasFavoriteNeighbor(tile) {
@@ -278,6 +300,8 @@ function stepService() {
         state.complaints += 1;
         changeAmbient(-10);
         say("クレーム発生！");
+        showFloat("クレーム -10", "bad");
+        playSound("bad");
       }
 
       if (tile.turns <= 0) {
@@ -290,7 +314,7 @@ function stepService() {
   collapseBoard();
 
   if (state.complaints >= 3) {
-    endGame("出禁が三度出た。今日は営業というより、後始末だった。");
+    endGame("出禁が三度出た。今日は営業というより、後始末だった。", "出禁3回");
   }
 
   render();
@@ -324,6 +348,8 @@ function handleCombo(col) {
     speedColumn(col);
     addCombo(`${casts[col].name}列`, "ボトル入り");
     say("ボトル入り！");
+    showFloat("ボトル入り！", "good");
+    playSound("combo");
   }
 
   if (state.streaks[col] > 0 && state.streaks[col] % 5 === 0) {
@@ -331,6 +357,8 @@ function handleCombo(col) {
     clearOneEachColumn();
     addCombo(`${casts[col].name}列`, "シャンパンコール");
     say("シャンパン！");
+    showFloat("シャンパン！", "good");
+    playSound("combo");
   }
 }
 
@@ -396,6 +424,15 @@ function say(text) {
   messageEl.textContent = text;
 }
 
+function showFloat(text, tone = "neutral") {
+  if (!floatLayer) return;
+  const pop = document.createElement("div");
+  pop.className = `float-pop ${tone}`;
+  pop.textContent = text;
+  floatLayer.appendChild(pop);
+  pop.addEventListener("animationend", () => pop.remove());
+}
+
 function isPreferred(guest, col) {
   return col === guest.favorite || guest.id === "uwaki";
 }
@@ -430,6 +467,7 @@ function render() {
   document.body.classList.toggle("air-high", state.ambient >= 80);
   document.body.classList.toggle("air-low", state.ambient <= 30);
   scoreValue.textContent = formatMoney(state.score);
+  bestValue.textContent = `ベスト ${formatMoney(state.bestScore)}`;
   timeValue.textContent = formatTime(state.time);
   complaintValue.textContent = `${state.complaints}/3`;
   complaintWarning.textContent = `あと${Math.max(0, 3 - state.complaints)}でGAME OVER`;
@@ -441,6 +479,7 @@ function render() {
 function renderBoard() {
   boardEl.innerHTML = "";
   const landingRow = lowestOpenRow(state.selectedCol);
+  const heights = columnHeights();
 
   for (let row = 0; row < ROWS; row += 1) {
     for (let col = 0; col < COLS; col += 1) {
@@ -450,7 +489,10 @@ function renderBoard() {
       cell.setAttribute("aria-label", `${col + 1}列 ${row + 1}段`);
       if (col === state.selectedCol) cell.classList.add("target");
       if (row === landingRow && col === state.selectedCol) cell.classList.add("ghost");
+      if (heights[col] >= ROWS - 1) cell.classList.add("column-warning");
+      if (heights[col] >= ROWS) cell.classList.add("column-full");
       cell.addEventListener("click", () => {
+        if (suppressNextClick) return;
         state.selectedCol = col;
         placeCurrent(col);
       });
@@ -460,6 +502,12 @@ function renderBoard() {
       boardEl.appendChild(cell);
     }
   }
+}
+
+function columnHeights() {
+  return Array.from({ length: COLS }, (_, col) => (
+    state.board.reduce((count, row) => count + (row[col] ? 1 : 0), 0)
+  ));
 }
 
 function tileElement(tile) {
@@ -510,16 +558,24 @@ function renderGuest(el, guest) {
   const target = guest.vipTarget !== null
     ? `<span class="guest-target" style="--target:${casts[guest.vipTarget].color}">指名:${casts[guest.vipTarget].name}</span>`
     : "";
+  const targetLine = el === currentGuest ? `<span class="target-line">${targetLineForGuest(guest)}</span>` : "";
   const readout = read ? `<span class="placement ${read.tone}">${read.label}</span>` : "";
   const turns = serviceTurns(guest, state.selectedCol);
   el.innerHTML = `
     ${guestFace(guest)}
     ${read ? `<span class="relation-badge ${read.tone}">${read.icon}</span>` : ""}
     <span class="guest-name">${guest.label}</span>
+    ${targetLine}
     <span class="guest-meta"><span class="cast-dot"></span>推し:${casts[guest.favorite].name}${target}</span>
     <span class="guest-meta guest-turns">満足ターン ${turns}</span>
     ${readout}
   `;
+}
+
+function targetLineForGuest(guest) {
+  if (guest.id === "uwaki") return "推し→だれでも";
+  if (guest.vipTarget !== null) return `指名→${casts[guest.vipTarget].name}`;
+  return `推し→${casts[guest.favorite].name}`;
 }
 
 function guestFace(guest) {
@@ -564,7 +620,7 @@ function gameLoop(now) {
       state.lastSecond = now;
       changeAmbient(-0.15);
       if (state.time <= 0) {
-        endGame("閉店時間。満足も未練も、レジ締めの前では同じ数字になる。");
+        endGame("閉店時間。満足も未練も、レジ締めの前では同じ数字になる。", "閉店時間");
       }
     }
 
@@ -577,14 +633,41 @@ function gameLoop(now) {
   requestAnimationFrame(gameLoop);
 }
 
-function endGame(copy) {
+function endGame(copy, reason = "営業終了") {
   state.running = false;
+  updateBestScore();
+  state.lastResult = {
+    score: state.score,
+    ambient: Math.round(state.ambient),
+    regulars: state.regulars.length,
+    reason,
+  };
+  resultReason.textContent = `敗因: ${reason}`;
   document.querySelector("#resultCopy").textContent = copy;
   document.querySelector("#finalScore").textContent = formatMoney(state.score);
   document.querySelector("#finalAmbient").textContent = Math.round(state.ambient);
   document.querySelector("#finalRegulars").textContent = state.regulars.length;
   overlay.classList.remove("hidden");
+  playSound("gameover");
   render();
+}
+
+function loadBestScore() {
+  try {
+    return Number(localStorage.getItem(BEST_SCORE_KEY)) || 0;
+  } catch {
+    return 0;
+  }
+}
+
+function updateBestScore() {
+  if (state.score <= state.bestScore) return;
+  state.bestScore = state.score;
+  try {
+    localStorage.setItem(BEST_SCORE_KEY, String(state.bestScore));
+  } catch {
+    // localStorage may be unavailable in strict browser modes.
+  }
 }
 
 function formatMoney(value) {
@@ -603,12 +686,96 @@ function moveSelection(delta) {
   render();
 }
 
+function initAudio() {
+  if (audioContext) {
+    if (audioContext.state === "suspended") audioContext.resume();
+    return;
+  }
+  const Context = window.AudioContext || window.webkitAudioContext;
+  if (!Context) return;
+  audioContext = new Context();
+}
+
+function playSound(type) {
+  if (!audioContext) return;
+  const patterns = {
+    place: [330],
+    match: [523, 659],
+    bad: [180, 140],
+    combo: [523, 659, 784],
+    gameover: [220, 165, 110],
+  };
+  const notes = patterns[type] || patterns.place;
+  notes.forEach((frequency, index) => {
+    const oscillator = audioContext.createOscillator();
+    const gain = audioContext.createGain();
+    oscillator.type = type === "bad" || type === "gameover" ? "sawtooth" : "triangle";
+    oscillator.frequency.value = frequency;
+    oscillator.connect(gain);
+    gain.connect(audioContext.destination);
+    const start = audioContext.currentTime + index * 0.06;
+    gain.gain.setValueAtTime(0.0001, start);
+    gain.gain.exponentialRampToValueAtTime(type === "combo" ? 0.12 : 0.08, start + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.12);
+    oscillator.start(start);
+    oscillator.stop(start + 0.14);
+  });
+}
+
+function shareResult() {
+  const result = state.lastResult || {
+    score: state.score,
+    ambient: Math.round(state.ambient),
+    regulars: state.regulars.length,
+    reason: "営業中",
+  };
+  const text = `おじさんポイポイ！ 売上${formatMoney(result.score)} / 空気${result.ambient}% / 常連${result.regulars}人 #おじさんポイポイ`;
+  const url = "https://judo-zz.github.io/concafe-ojisan-puzzle/";
+  const shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`;
+  window.open(shareUrl, "_blank", "noopener,noreferrer");
+}
+
+let touchStartX = 0;
+let touchStartY = 0;
+let suppressNextClick = false;
+
+function handleTouchStart(event) {
+  const touch = event.changedTouches[0];
+  touchStartX = touch.clientX;
+  touchStartY = touch.clientY;
+}
+
+function handleTouchEnd(event) {
+  if (!state.running) return;
+  const touch = event.changedTouches[0];
+  const dx = touch.clientX - touchStartX;
+  const dy = touch.clientY - touchStartY;
+  if (Math.max(Math.abs(dx), Math.abs(dy)) < 34) return;
+  if (Math.abs(dx) > Math.abs(dy)) {
+    moveSelection(dx > 0 ? 1 : -1);
+    playSound("place");
+    suppressNextClick = true;
+  } else if (dy > 0) {
+    placeCurrent();
+    suppressNextClick = true;
+  }
+  if (suppressNextClick) {
+    window.setTimeout(() => {
+      suppressNextClick = false;
+    }, 350);
+  }
+}
+
 document.querySelector("#leftButton").addEventListener("click", () => moveSelection(-1));
 document.querySelector("#rightButton").addEventListener("click", () => moveSelection(1));
 document.querySelector("#dropButton").addEventListener("click", () => placeCurrent());
 document.querySelector("#startButton").addEventListener("click", startGame);
 document.querySelector("#restartButton").addEventListener("click", resetGame);
 document.querySelector("#againButton").addEventListener("click", resetGame);
+shareButton.addEventListener("click", shareResult);
+document.addEventListener("pointerdown", initAudio, { once: true });
+gamePanel.addEventListener("touchstart", handleTouchStart, { passive: true });
+gamePanel.addEventListener("touchend", handleTouchEnd, { passive: true });
 
 window.addEventListener("keydown", (event) => {
   if (!state.started && (event.key === "Enter" || event.key === " ")) {
