@@ -3,11 +3,11 @@ const ROWS = 9;
 const SHIFT_SECONDS = 150;
 
 const casts = [
-  { name: "営業", trait: "太客処理のプロ", detail: "太客短縮 / 売上UP", color: "#2fb8ff" },
-  { name: "ガチ恋", trait: "高速処理の受け皿", detail: "ガチ恋一致で即帰宅に近い", color: "#ff4fae" },
-  { name: "新人", trait: "低速だが個性枠", detail: "処理ターンやや長め", color: "#9be65e" },
-  { name: "元ドル", trait: "空気回復役", detail: "退店時に空気を少し回復", color: "#aa58ff" },
-  { name: "ベテラン", trait: "VIP対応のエース", detail: "VIP処理短縮 / 売上UP", color: "#ffd21e" },
+  { name: "営業", trait: "太客処理のプロ", detail: "太客短縮 / 売上UP", color: "#2fb8ff", asset: "assets/casts/eigyo.svg" },
+  { name: "ガチ恋", trait: "高速処理の受け皿", detail: "ガチ恋一致で即帰宅に近い", color: "#ff4fae", asset: "assets/casts/gachikoi.svg" },
+  { name: "新人", trait: "低速だが個性枠", detail: "処理ターンやや長め", color: "#9be65e", asset: "assets/casts/shinjin.svg" },
+  { name: "元ドル", trait: "空気回復役", detail: "退店時に空気を少し回復", color: "#aa58ff", asset: "assets/casts/motodol.svg" },
+  { name: "ベテラン", trait: "VIP対応のエース", detail: "VIP処理短縮 / 売上UP", color: "#ffd21e", asset: "assets/casts/veteran.svg" },
 ];
 
 const guestTypes = [
@@ -504,7 +504,7 @@ function renderCasts() {
     button.style.setProperty("--cast", cast.color);
     const call = nextCallInfo(col);
     button.innerHTML = `
-      <span class="portrait"></span>
+      <img class="cast-face" src="${cast.asset}" alt="" aria-hidden="true">
       <strong>${cast.name}</strong>
       <span>${cast.trait}</span>
       <span>${cast.detail}</span>

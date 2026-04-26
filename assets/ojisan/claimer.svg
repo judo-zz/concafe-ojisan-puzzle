@@ -1,11 +1,12 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
-  <circle cx="64" cy="66" r="49" fill="#b8b8b8" stroke="#33261f" stroke-width="7"/>
-  <path d="M18 58c6-29 25-42 46-42s40 13 46 42c-12-5-22-5-33-1-9 3-17 3-26 0-11-4-21-4-33 1z" fill="#5a5752"/>
-  <path d="M39 67l17-8M89 67l-17-8" stroke="#33261f" stroke-width="6" stroke-linecap="round"/>
-  <path d="M50 92c10-8 18-8 28 0" fill="none" stroke="#33261f" stroke-width="5" stroke-linecap="round"/>
-  <circle cx="38" cy="83" r="5" fill="#e58f88" opacity=".65"/><circle cx="90" cy="83" r="5" fill="#e58f88" opacity=".65"/>
-  <g transform="translate(88 82)" stroke="#33261f" stroke-width="4" stroke-linecap="round">
-    <path d="M15 0l9-8M15 0l10 7M15 0l-1-12M15 0l-10-6M15 0l-8 10" fill="none"/>
-    <circle cx="15" cy="0" r="8" fill="#ff654f"/>
+  <filter id="wiggle"><feTurbulence baseFrequency=".055" numOctaves="2" seed="8"/><feDisplacementMap in="SourceGraphic" scale="1.25"/></filter>
+  <g filter="url(#wiggle)" stroke="#32261f" stroke-width="6" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M21 66c0-28 18-45 43-45 24 1 43 18 43 45s-18 44-43 44c-25-1-43-17-43-44z" fill="#bbb5ac"/>
+    <path d="M22 61c5-24 20-37 42-37 22 0 36 12 42 36-11-6-20-4-30 0-10 4-20 4-31 0-9-3-16-4-23 1z" fill="#46413d"/>
+    <path d="M39 69l17 7M89 69l-17 7" fill="none"/>
+    <circle cx="49" cy="80" r="4" fill="#32261f"/><circle cx="79" cy="80" r="4" fill="#32261f"/>
+    <path d="M53 95c6-7 16-7 22 0" fill="none"/>
+    <path d="M93 52l9-10M96 61h14M91 70l12 9" stroke="#ff604d" fill="none"/>
+    <circle cx="38" cy="87" r="5" fill="#ff8b82" stroke="none"/><circle cx="90" cy="87" r="5" fill="#ff8b82" stroke="none"/>
   </g>
 </svg>
