@@ -3,11 +3,11 @@ const ROWS = 9;
 const SHIFT_SECONDS = 150;
 
 const casts = [
-  { name: "営業", trait: "太客+", color: "#4bc2c5" },
-  { name: "ガチ恋", trait: "即帰宅", color: "#ea6f91" },
-  { name: "新人", trait: "粘る", color: "#8fc866" },
-  { name: "元ドル", trait: "空気+", color: "#b88ee6" },
-  { name: "ベテラン", trait: "VIP+", color: "#e1b453" },
+  { name: "営業", trait: "太客処理のプロ", detail: "太客短縮 / 売上UP", color: "#2fb8ff" },
+  { name: "ガチ恋", trait: "高速処理の受け皿", detail: "ガチ恋一致で即帰宅に近い", color: "#ff4fae" },
+  { name: "新人", trait: "低速だが個性枠", detail: "処理ターンやや長め", color: "#9be65e" },
+  { name: "元ドル", trait: "空気回復役", detail: "退店時に空気を少し回復", color: "#aa58ff" },
+  { name: "ベテラン", trait: "VIP対応のエース", detail: "VIP処理短縮 / 売上UP", color: "#ffd21e" },
 ];
 
 const guestTypes = [
@@ -102,6 +102,7 @@ const ambientFill = document.querySelector("#ambientFill");
 const scoreValue = document.querySelector("#scoreValue");
 const timeValue = document.querySelector("#timeValue");
 const complaintValue = document.querySelector("#complaintValue");
+const complaintWarning = document.querySelector("#complaintWarning");
 const currentGuest = document.querySelector("#currentGuest");
 const nextGuest = document.querySelector("#nextGuest");
 const dropFill = document.querySelector("#dropFill");
@@ -148,6 +149,10 @@ function resetGame() {
   state.lastSecond = performance.now();
   setDropWindow(performance.now());
   overlay.classList.add("hidden");
+  comboList.innerHTML = "";
+  addCombo("シャンパンコール", "全列から1人ずつ消去 / 空気大UP");
+  addCombo("ボトル入り（ガチ恋）", "空気UP / 処理少し進行");
+  addCombo("推し一致（太客）", "空気 +5 / 売上 +48,000");
   messageEl.textContent = "今日もシフトが始まる。彼女たちは笑顔を作り、私はおじさんを配置する。";
   render();
 }
@@ -412,9 +417,10 @@ function render() {
   scoreValue.textContent = formatMoney(state.score);
   timeValue.textContent = formatTime(state.time);
   complaintValue.textContent = `${state.complaints}/3`;
+  complaintWarning.textContent = `あと${Math.max(0, 3 - state.complaints)}でGAME OVER`;
   regularsEl.innerHTML = state.regulars.length
-    ? state.regulars.map((item) => `<span>${item.label}→${item.favorite}</span>`).join("")
-    : "<span>まだ誰も戻ってこない</span>";
+    ? state.regulars.map((item) => `<span><b>${item.label}</b><small>推し: ${item.favorite}</small></span>`).join("")
+    : "<span><b>タカシン</b><small>推し: 営業</small></span><span><b>りょうた</b><small>推し: ガチ恋</small></span><span><b>ケンジ</b><small>推し: 新人</small></span><span><b>バイセン</b><small>指名: ベテラン</small></span>";
 }
 
 function renderBoard() {
@@ -444,6 +450,7 @@ function renderBoard() {
 function tileElement(tile) {
   const wrapper = document.createElement("div");
   const classes = ["tile"];
+  classes.push(`guest-${tile.guest.id}`);
   if (tile.matched) classes.push("matched");
   if (tile.vipMiss || tile.jealousy || tile.guest.id === "claimer") classes.push("danger");
   wrapper.className = classes.join(" ");
@@ -470,6 +477,7 @@ function renderCasts() {
       <span class="portrait"></span>
       <strong>${cast.name}</strong>
       <span>${cast.trait}</span>
+      <span>${cast.detail}</span>
       <span class="call-state">${call.label}</span>
       <span class="call-dots">${call.dots}</span>
     `;
@@ -489,9 +497,11 @@ function renderGuest(el, guest) {
     ? `<span class="guest-target" style="--target:${casts[guest.vipTarget].color}">指名:${casts[guest.vipTarget].name}</span>`
     : "";
   const readout = read ? `<span class="placement ${read.tone}">${read.label}</span>` : "";
+  const turns = serviceTurns(guest, state.selectedCol);
   el.innerHTML = `
     <span class="guest-name">${guest.label}</span>
     <span class="guest-meta"><span class="cast-dot"></span>推し:${casts[guest.favorite].name}${target}</span>
+    <span class="guest-meta">満足ターン ${turns}</span>
     ${readout}
   `;
 }
@@ -547,7 +557,7 @@ function endGame(copy) {
 }
 
 function formatMoney(value) {
-  return `¥${value.toLocaleString("ja-JP")}`;
+  return `¥${(value * 1000).toLocaleString("ja-JP")}`;
 }
 
 function formatTime(value) {

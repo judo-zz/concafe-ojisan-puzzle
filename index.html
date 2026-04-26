@@ -11,10 +11,13 @@
       <section class="game-panel" aria-label="コンカフェおじさん落ちものパズル">
         <header class="topbar">
           <div>
-            <p class="eyebrow">SHIFT 00:00-02:30</p>
             <h1><span class="title-main">コンカフェおじさん</span><span class="title-sub">落ちものパズル</span></h1>
+            <p class="tagline">彼女たちは笑顔を作り、私はおじさんを配置する。</p>
           </div>
-          <button id="restartButton" class="icon-button" type="button" aria-label="リスタート" title="リスタート">↻</button>
+          <button id="restartButton" class="icon-button" type="button" aria-label="リスタート" title="リスタート">
+            <span>↻</span>
+            <small>リスタート</small>
+          </button>
         </header>
 
         <div class="hud" aria-label="シフト状況">
@@ -30,14 +33,17 @@
           <div class="stat">
             <span>売上</span>
             <strong id="scoreValue">0</strong>
+            <em>本日ベスト ¥1,680,000</em>
           </div>
           <div class="stat">
-            <span>残り</span>
+            <span>残り時間</span>
             <strong id="timeValue">150</strong>
+            <div class="mini-track" aria-hidden="true"><i></i></div>
           </div>
           <div class="stat">
-            <span>出禁</span>
+            <span>出禁カウント</span>
             <strong id="complaintValue">0/3</strong>
+            <em id="complaintWarning" class="danger-copy">あと3でGAME OVER</em>
           </div>
         </div>
 
@@ -51,7 +57,7 @@
             <span>次</span>
             <div id="nextGuest" class="guest-chip small"></div>
           </div>
-          <div id="message" class="message">今日もシフトが始まる。私はただ、落ちてくる感情を配置する。</div>
+          <div id="message" class="message">推し一致で早く帰るぞ！</div>
         </div>
 
         <div class="playfield">
@@ -64,28 +70,31 @@
         </div>
 
         <div class="controls">
-          <button id="leftButton" type="button" aria-label="左へ">←</button>
-          <button id="dropButton" type="button">配置</button>
-          <button id="rightButton" type="button" aria-label="右へ">→</button>
+          <button id="leftButton" type="button" aria-label="左へ">←<span>左の列</span></button>
+          <button id="dropButton" type="button"><strong>ここに配置</strong><small>タップで配置 ↓</small></button>
+          <button id="rightButton" type="button" aria-label="右へ"><span>右の列</span>→</button>
         </div>
       </section>
 
       <aside class="side-panel">
-        <div class="side-title">
-          <p class="eyebrow">BACKROOM</p>
+        <div class="legend" aria-label="凡例">
+          <span><b class="legend-heart">♡</b>推し一致（GOOD）</span>
+          <span><b class="legend-anger">※</b>推し被り（BAD）</span>
+          <span><b class="legend-ng">×</b>指名外（NG）</span>
+          <span><b class="legend-crown">♛</b>指名OK（VIP）</span>
+          <span><b class="legend-free">∞</b>推しフリー</span>
+        </div>
+        <div class="section">
           <h2>営業記録</h2>
-        </div>
-        <div class="section">
-          <h2>シフトメモ</h2>
-          <p>推しの列に置くと早く満足して帰る。推し被りは空気を削る。クレーマーは放置すると出禁カウントが進む。</p>
-        </div>
-        <div class="section">
-          <h2>コール</h2>
           <ul id="comboList" class="combo-list"></ul>
         </div>
         <div class="section">
-          <h2>常連化</h2>
+          <h2>常連リスト</h2>
           <div id="regulars" class="regulars"></div>
+        </div>
+        <div class="section">
+          <h2>シフトメモ</h2>
+          <p>ガチ恋はガチ恋へ、被り注意。新人は遅いが、空気が悪い時の緩衝材。クレーマーは早めに処理。放置は死。ベテランはVIP最優先。</p>
         </div>
       </aside>
     </main>
