@@ -145,6 +145,7 @@ function resetGame() {
   state.regulars = [];
   state.running = true;
   state.tickMs = 1250;
+  seedOpeningFloor();
   state.lastStep = performance.now();
   state.lastSecond = performance.now();
   setDropWindow(performance.now());
@@ -155,6 +156,22 @@ function resetGame() {
   addCombo("推し一致（太客）", "空気 +5 / 売上 +48,000");
   messageEl.textContent = "今日もシフトが始まる。彼女たちは笑顔を作り、私はおじさんを配置する。";
   render();
+}
+
+function seedOpeningFloor() {
+  const openingGuests = ["futoi", "usui", "gachikoi", "uwaki", "vip", "doutan"];
+  for (let col = 0; col < COLS; col += 1) {
+    const stackHeight = col === 2 ? 1 : 2 + (col % 2);
+    for (let depth = 0; depth < stackHeight; depth += 1) {
+      const typeId = openingGuests[(col * 2 + depth) % openingGuests.length];
+      const type = guestTypes.find((guest) => guest.id === typeId);
+      const guest = makeGuest(type);
+      guest.favorite = (col + depth + 1) % COLS;
+      if (guest.id === "vip") guest.vipTarget = col;
+      const row = ROWS - 1 - depth;
+      state.board[row][col] = tileForGuest(guest, col);
+    }
+  }
 }
 
 function serviceTurns(guest, col) {
@@ -490,6 +507,7 @@ function renderCasts() {
 }
 
 function renderGuest(el, guest) {
+  el.className = `guest-chip guest-${guest.id}${el === nextGuest ? " small" : ""}`;
   el.style.setProperty("--chip", guest.color);
   el.style.setProperty("--favorite", casts[guest.favorite].color);
   const read = el === currentGuest ? placementRead(guest, state.selectedCol) : null;
