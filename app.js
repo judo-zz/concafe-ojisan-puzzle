@@ -151,7 +151,6 @@ function resetGame() {
   state.regulars = [];
   state.running = true;
   state.tickMs = 1700;
-  seedOpeningFloor();
   state.lastStep = performance.now();
   state.lastSecond = performance.now();
   setDropWindow(performance.now());
@@ -169,22 +168,6 @@ function startGame() {
   startScreen.hidden = true;
   gamePanel.hidden = false;
   resetGame();
-}
-
-function seedOpeningFloor() {
-  const openingGuests = ["futoi", "usui", "gachikoi", "uwaki", "vip", "doutan"];
-  for (let col = 0; col < COLS; col += 1) {
-    const stackHeight = col === 2 ? 1 : 2 + (col % 2);
-    for (let depth = 0; depth < stackHeight; depth += 1) {
-      const typeId = openingGuests[(col * 2 + depth) % openingGuests.length];
-      const type = guestTypes.find((guest) => guest.id === typeId);
-      const guest = makeGuest(type);
-      guest.favorite = (col + depth + 1) % COLS;
-      if (guest.id === "vip") guest.vipTarget = col;
-      const row = ROWS - 1 - depth;
-      state.board[row][col] = tileForGuest(guest, col);
-    }
-  }
 }
 
 function serviceTurns(guest, col) {
