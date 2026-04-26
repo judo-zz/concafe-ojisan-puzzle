@@ -4,11 +4,11 @@ const SHIFT_SECONDS = 90;
 const BEST_SCORE_KEY = "ojisan-poipoi-best-score-v3";
 
 const casts = [
-  { name: "みじゅ", trait: "太客処理のプロ", detail: "太客短縮 / 売上UP", color: "#2fb8ff", asset: "assets/casts/eigyo.svg" },
-  { name: "ちゃき", trait: "接客スピード枠", detail: "少し早く帰せる", color: "#ff4fae", asset: "assets/casts/gachikoi.svg" },
-  { name: "なの", trait: "低速だが個性枠", detail: "処理ターンやや長め", color: "#9be65e", asset: "assets/casts/shinjin.svg" },
-  { name: "いずも", trait: "空気回復役", detail: "退店時に空気を少し回復", color: "#aa58ff", asset: "assets/casts/motodol.svg" },
-  { name: "ゆめ", trait: "VIP対応のエース", detail: "VIP処理短縮 / 売上UP", color: "#ffd21e", asset: "assets/casts/veteran.svg" },
+  { name: "みじゅ", trait: "太客処理のプロ", detail: "太客短縮 / 売上UP", color: "#2fb8ff", asset: "assets/casts/miju.png" },
+  { name: "ちゃき", trait: "接客スピード枠", detail: "少し早く帰せる", color: "#ff4fae", asset: "assets/casts/chaki.png" },
+  { name: "なの", trait: "低速だが個性枠", detail: "処理ターンやや長め", color: "#9be65e", asset: "assets/casts/nano.png" },
+  { name: "いずも", trait: "空気回復役", detail: "退店時に空気を少し回復", color: "#aa58ff", asset: "assets/casts/izumo.png" },
+  { name: "ゆめ", trait: "VIP対応のエース", detail: "VIP処理短縮 / 売上UP", color: "#ffd21e", asset: "assets/casts/yume.png" },
 ];
 
 const guestTypes = [
@@ -575,7 +575,7 @@ function targetLineForGuest(guest) {
 
 function guestFace(guest) {
   return `
-    <img class="oji-face face-${guest.id}" src="assets/ojisan/${guest.id}.svg" alt="" aria-hidden="true">
+    <img class="oji-face face-${guest.id}" src="assets/ojisan/${guest.id}.png" alt="" aria-hidden="true">
   `;
 }
 
