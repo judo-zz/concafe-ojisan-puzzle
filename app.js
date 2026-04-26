@@ -1,5 +1,5 @@
 const COLS = 5;
-const ROWS = 9;
+const ROWS = 5;
 const SHIFT_SECONDS = 150;
 
 const casts = [

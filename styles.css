@@ -506,7 +506,7 @@ h1 {
   min-height: 0;
   display: grid;
   grid-template-columns: repeat(5, 1fr);
-  grid-template-rows: repeat(9, minmax(0, 1fr));
+  grid-template-rows: repeat(5, minmax(0, 1fr));
   gap: 5px;
   overflow: hidden;
 }
