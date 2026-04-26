@@ -3,11 +3,11 @@ const ROWS = 9;
 const SHIFT_SECONDS = 150;
 
 const casts = [
-  { name: "営業", trait: "太客処理のプロ", detail: "太客短縮 / 売上UP", color: "#2fb8ff", asset: "assets/casts/eigyo.svg" },
-  { name: "ガチ恋", trait: "高速処理の受け皿", detail: "ガチ恋一致で即帰宅に近い", color: "#ff4fae", asset: "assets/casts/gachikoi.svg" },
-  { name: "新人", trait: "低速だが個性枠", detail: "処理ターンやや長め", color: "#9be65e", asset: "assets/casts/shinjin.svg" },
-  { name: "元ドル", trait: "空気回復役", detail: "退店時に空気を少し回復", color: "#aa58ff", asset: "assets/casts/motodol.svg" },
-  { name: "ベテラン", trait: "VIP対応のエース", detail: "VIP処理短縮 / 売上UP", color: "#ffd21e", asset: "assets/casts/veteran.svg" },
+  { name: "みじゅ", trait: "太客処理のプロ", detail: "太客短縮 / 売上UP", color: "#2fb8ff", asset: "assets/casts/eigyo.svg" },
+  { name: "ちゃき", trait: "高速処理の受け皿", detail: "ガチ恋一致で即帰宅に近い", color: "#ff4fae", asset: "assets/casts/gachikoi.svg" },
+  { name: "なの", trait: "低速だが個性枠", detail: "処理ターンやや長め", color: "#9be65e", asset: "assets/casts/shinjin.svg" },
+  { name: "いずも", trait: "空気回復役", detail: "退店時に空気を少し回復", color: "#aa58ff", asset: "assets/casts/motodol.svg" },
+  { name: "ゆめ", trait: "VIP対応のエース", detail: "VIP処理短縮 / 売上UP", color: "#ffd21e", asset: "assets/casts/veteran.svg" },
 ];
 
 const guestTypes = [
@@ -194,9 +194,9 @@ function serviceTurns(guest, col) {
   if (preferred) turns -= guest.id === "gachikoi" ? 2 : 1;
   if (!preferred) turns += guest.id === "vip" ? 2 : 1;
   if (guest.vipTarget !== null && col !== guest.vipTarget) turns += 2;
-  if (casts[col].name === "営業" && guest.id === "futoi") turns -= 0.5;
-  if (casts[col].name === "ベテラン" && guest.id === "vip") turns -= 0.5;
-  if (casts[col].name === "新人") turns += 1;
+  if (casts[col].name === "みじゅ" && guest.id === "futoi") turns -= 0.5;
+  if (casts[col].name === "ゆめ" && guest.id === "vip") turns -= 0.5;
+  if (casts[col].name === "なの") turns += 1;
   if (state.ambient >= 82) turns -= 1;
   if (state.ambient <= 32) turns += 1;
 
@@ -320,13 +320,13 @@ function clearTile({ tile, row, col }) {
   let points = guest.points + Math.round(state.ambient * 0.8);
 
   if (preferred) points = Math.round(points * 1.25);
-  if (guest.id === "futoi" && casts[col].name === "営業") points += 50;
-  if (guest.id === "vip" && casts[col].name === "ベテラン") points += 75;
+  if (guest.id === "futoi" && casts[col].name === "みじゅ") points += 50;
+  if (guest.id === "vip" && casts[col].name === "ゆめ") points += 75;
 
   state.score += points;
   state.streaks[col] += 1;
 
-  if (casts[col].name === "元ドル") changeAmbient(2);
+  if (casts[col].name === "いずも") changeAmbient(2);
   if (guest.id === "futoi") changeAmbient(5);
   if (guest.id === "claimer") changeAmbient(4);
   if (guest.id === "gachikoi" && preferred) changeAmbient(4);
@@ -452,7 +452,7 @@ function render() {
   complaintWarning.textContent = `あと${Math.max(0, 3 - state.complaints)}でGAME OVER`;
   regularsEl.innerHTML = state.regulars.length
     ? state.regulars.map((item) => `<span><b>${item.label}</b><small>推し: ${item.favorite}</small></span>`).join("")
-    : "<span><b>タカシン</b><small>推し: 営業</small></span><span><b>りょうた</b><small>推し: ガチ恋</small></span><span><b>ケンジ</b><small>推し: 新人</small></span><span><b>バイセン</b><small>指名: ベテラン</small></span>";
+    : "<span><b>タカシン</b><small>推し: みじゅ</small></span><span><b>りょうた</b><small>推し: ちゃき</small></span><span><b>ケンジ</b><small>推し: なの</small></span><span><b>バイセン</b><small>指名: ゆめ</small></span>";
 }
 
 function renderBoard() {
