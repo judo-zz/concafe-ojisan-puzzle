@@ -2,6 +2,11 @@
 
 コンカフェの常連視点を起点にした、ブラウザで遊べる落ちものパズルのプロトタイプです。
 
+## レビュー用ドキュメント
+
+- [企画仕様書](docs/game-design-spec.md)
+- [レビューガイド](docs/review-guide.md)
+
 ## 遊び方
 
 - 左右キーで列を選択
@@ -28,3 +33,5 @@ python3 -m http.server 8026
 - `index.html`: 画面構造
 - `styles.css`: フロントデザイン
 - `app.js`: ゲームロジック
+- `docs/game-design-spec.md`: 企画仕様書
+- `docs/review-guide.md`: レビュー依頼用ガイド
