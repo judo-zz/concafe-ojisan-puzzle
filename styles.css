@@ -256,11 +256,14 @@ h1 {
   display: grid;
   grid-template-columns: 1.1fr 0.78fr 0.88fr;
   gap: 6px;
+  height: 96px;
+  align-items: stretch;
 }
 
 .queue-card,
 .message {
-  min-height: 92px;
+  height: 96px;
+  min-height: 0;
   padding: 7px;
   border: 3px solid var(--line);
   border-radius: 16px;
@@ -270,7 +273,7 @@ h1 {
 
 .queue-card > span {
   display: inline-block;
-  margin: -14px 0 2px -8px;
+  margin: 0 0 3px 0;
   padding: 3px 9px;
   border: 3px solid var(--line);
   border-radius: 999px;
@@ -287,6 +290,7 @@ h1 {
 .message {
   display: grid;
   align-content: center;
+  overflow: hidden;
   background: #fffdf2;
   font-size: 0.82rem;
   font-weight: 950;
@@ -299,12 +303,15 @@ h1 {
   align-items: center;
   column-gap: 6px;
   row-gap: 1px;
+  height: 58px;
+  overflow: hidden;
 }
 
 .guest-chip.small {
   display: grid;
   grid-template-columns: 1fr;
   place-items: center;
+  height: 58px;
 }
 
 .guest-chip.small .guest-name,
@@ -317,6 +324,7 @@ h1 {
 .guest-name {
   font-size: 1rem;
   font-weight: 950;
+  line-height: 1.05;
 }
 
 .guest-meta,
@@ -449,11 +457,13 @@ h1 {
 }
 
 .cell.ghost::after {
-  content: "↓";
+  content: "";
+  width: 54%;
+  height: 54%;
+  border: 4px solid var(--yellow);
+  border-radius: 10px;
   color: var(--yellow);
-  font-size: 1.15rem;
-  font-weight: 950;
-  text-shadow: 0 2px var(--line);
+  background: rgba(255, 216, 77, 0.22);
 }
 
 .tile {
@@ -571,12 +581,6 @@ h1 {
   font-weight: 950;
 }
 
-.controls button span {
-  display: block;
-  color: #fff;
-  font-size: 0.75rem;
-}
-
 #dropButton {
   background: linear-gradient(#ffe36d, #ffc928);
   color: var(--ink);
@@ -586,10 +590,6 @@ h1 {
 #dropButton strong {
   display: block;
   font-size: 1.5rem;
-}
-
-#dropButton small {
-  font-size: 0.78rem;
 }
 
 .oji-face {
