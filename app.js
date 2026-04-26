@@ -87,7 +87,8 @@ const state = {
   complaints: 0,
   streaks: [0, 0, 0, 0, 0],
   regulars: [],
-  running: true,
+  running: false,
+  started: false,
   tickMs: 1250,
   dropStarted: 0,
   dropWindow: 3600,
@@ -96,6 +97,8 @@ const state = {
   lastSecond: 0,
 };
 
+const startScreen = document.querySelector("#startScreen");
+const gamePanel = document.querySelector("#gamePanel");
 const boardEl = document.querySelector("#board");
 const castsEl = document.querySelector("#casts");
 const ambientValue = document.querySelector("#ambientValue");
@@ -135,6 +138,7 @@ function makeGuest(type) {
 }
 
 function resetGame() {
+  state.started = true;
   state.board = Array.from({ length: ROWS }, () => Array(COLS).fill(null));
   state.current = weightedGuest();
   state.next = weightedGuest();
@@ -159,6 +163,12 @@ function resetGame() {
   addCombo("推し一致（太客）", "空気 +5 / 売上 +48,000");
   messageEl.textContent = "推し席へポイ！";
   render();
+}
+
+function startGame() {
+  startScreen.hidden = true;
+  gamePanel.hidden = false;
+  resetGame();
 }
 
 function seedOpeningFloor() {
@@ -613,10 +623,17 @@ function moveSelection(delta) {
 document.querySelector("#leftButton").addEventListener("click", () => moveSelection(-1));
 document.querySelector("#rightButton").addEventListener("click", () => moveSelection(1));
 document.querySelector("#dropButton").addEventListener("click", () => placeCurrent());
+document.querySelector("#startButton").addEventListener("click", startGame);
 document.querySelector("#restartButton").addEventListener("click", resetGame);
 document.querySelector("#againButton").addEventListener("click", resetGame);
 
 window.addEventListener("keydown", (event) => {
+  if (!state.started && (event.key === "Enter" || event.key === " ")) {
+    event.preventDefault();
+    startGame();
+    return;
+  }
+  if (!state.started) return;
   if (event.key === "ArrowLeft") {
     event.preventDefault();
     moveSelection(-1);
@@ -632,5 +649,4 @@ window.addEventListener("keydown", (event) => {
   if (event.key.toLowerCase() === "r") resetGame();
 });
 
-resetGame();
 requestAnimationFrame(gameLoop);

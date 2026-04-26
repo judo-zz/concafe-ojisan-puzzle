@@ -60,15 +60,19 @@ button {
   touch-action: manipulation;
 }
 
+[hidden] {
+  display: none !important;
+}
+
 .app-shell {
   width: min(440px, 100%);
   height: calc(100svh - 12px);
 }
 
+.start-screen,
 .game-panel {
   height: 100%;
   display: grid;
-  grid-template-rows: auto auto auto minmax(0, 1fr) auto;
   gap: 7px;
   padding: 8px;
   border: 4px solid var(--line);
@@ -81,6 +85,17 @@ button {
   overflow: hidden;
 }
 
+.game-panel {
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  padding-top: 34px;
+}
+
+.start-screen {
+  place-items: center;
+  padding: 18px;
+}
+
+.start-screen::before,
 .game-panel::before {
   content: "";
   position: absolute;
@@ -92,16 +107,37 @@ button {
   border-bottom: 3px solid var(--line);
 }
 
+.game-panel::before {
+  height: 28px;
+  background:
+    radial-gradient(circle at 20px 0, #ff9fab 0 19px, transparent 20px) 0 0 / 60px 32px repeat-x,
+    radial-gradient(circle at 50px 0, #fff2b5 0 19px, transparent 20px) 0 0 / 60px 32px repeat-x;
+}
+
+.start-card {
+  width: min(330px, 100%);
+  display: grid;
+  justify-items: center;
+  gap: 18px;
+  text-align: center;
+}
+
+.start-card p {
+  margin: 0;
+  padding: 4px 12px;
+  border: 3px solid var(--line);
+  border-radius: 999px;
+  background: var(--mint);
+  color: #fff;
+  font-weight: 950;
+}
+
 .game-panel > * {
   position: relative;
 }
 
-.topbar {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 8px;
-  align-items: start;
-  padding-top: 6px;
+.start-screen > * {
+  position: relative;
 }
 
 h1 {
@@ -132,20 +168,24 @@ h1 {
   letter-spacing: 0;
 }
 
-.tagline {
-  margin: 5px 0 0 10px;
-  color: var(--brown);
-  font-size: 0.72rem;
-  font-weight: 800;
+.start-faces {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  gap: 8px;
 }
 
-.icon-button {
-  min-width: 84px;
-  min-height: 54px;
+.start-faces img {
+  width: 58px;
+  aspect-ratio: 1;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 0 rgba(53, 40, 31, 0.22));
+}
+
+.start-button,
+.restart-button {
   display: grid;
   place-items: center;
-  align-content: center;
-  gap: 0;
   border: 4px solid var(--line);
   border-radius: 18px;
   background: linear-gradient(#ff7fa9, #ff5e91);
@@ -154,12 +194,24 @@ h1 {
   font-weight: 950;
 }
 
-.icon-button span {
-  font-size: 1.45rem;
-  line-height: 1;
+.start-button {
+  width: min(280px, 100%);
+  min-height: 70px;
+  background: linear-gradient(#ffe36d, #ffc928);
+  color: var(--ink);
+  box-shadow: 0 6px 0 #c88f17, inset 0 2px rgba(255, 255, 255, 0.55);
+  font-size: 1.65rem;
 }
 
-.icon-button small {
+.restart-button {
+  position: absolute;
+  z-index: 5;
+  top: 8px;
+  right: 8px;
+  min-width: 62px;
+  min-height: 30px;
+  border-width: 3px;
+  border-radius: 12px;
   font-size: 0.72rem;
 }
 
