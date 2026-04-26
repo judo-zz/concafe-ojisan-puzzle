@@ -122,6 +122,75 @@ button:active {
   position: relative;
 }
 
+.tutorial {
+  position: absolute;
+  z-index: 10;
+  left: 50%;
+  top: 47%;
+  width: min(340px, calc(100% - 34px));
+  padding: 16px 18px;
+  display: grid;
+  gap: 6px;
+  place-items: center;
+  transform: translate(-50%, -50%);
+  border: 2px solid rgba(255, 210, 30, 0.8);
+  border-radius: 14px;
+  background: rgba(5, 6, 15, 0.9);
+  color: #fff;
+  box-shadow: 0 0 38px rgba(255, 210, 30, 0.38), inset 0 0 18px rgba(255, 255, 255, 0.08);
+  text-align: center;
+  pointer-events: none;
+  animation: tutorialPop 3000ms ease forwards;
+}
+
+.tutorial strong {
+  color: var(--gold);
+  font-size: clamp(1.55rem, 7vw, 2.35rem);
+  text-shadow: 0 0 16px rgba(255, 210, 30, 0.9);
+}
+
+.tutorial span {
+  color: #fff;
+  font-weight: 900;
+}
+
+.tutorial.hide {
+  display: none;
+}
+
+@keyframes tutorialPop {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -45%) scale(0.94);
+  }
+  12%,
+  78% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -55%) scale(0.98);
+  }
+}
+
+body.air-high .game-panel::before {
+  background:
+    linear-gradient(180deg, rgba(255, 210, 30, 0.18), transparent 20%),
+    radial-gradient(circle at 50% 34%, rgba(47, 216, 255, 0.22), transparent 31%);
+}
+
+body.air-low .game-panel {
+  box-shadow:
+    0 0 0 1px rgba(255, 67, 63, 0.36),
+    0 18px 70px rgba(0, 0, 0, 0.7),
+    inset 0 0 32px rgba(255, 67, 63, 0.22);
+}
+
+body.air-low .hud {
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.08), 0 0 26px rgba(255, 67, 63, 0.28);
+}
+
 .topbar {
   display: flex;
   align-items: start;
@@ -226,6 +295,13 @@ h1 span {
   display: grid;
   justify-items: center;
   gap: 7px;
+}
+
+.meter-label em {
+  color: #fff;
+  font-size: 0.68rem;
+  font-style: normal;
+  font-weight: 850;
 }
 
 .meter-label strong {
@@ -339,7 +415,7 @@ h1 span {
 
 .guest-chip {
   display: grid;
-  grid-template-columns: 82px 1fr;
+  grid-template-columns: 82px 1fr auto;
   align-items: center;
   column-gap: 16px;
   row-gap: 5px;
@@ -418,6 +494,39 @@ h1 span {
   grid-column: 2;
   margin-top: 2px;
   color: #fff;
+}
+
+.relation-badge {
+  grid-column: 3;
+  grid-row: 1 / span 3;
+  width: 64px;
+  height: 64px;
+  display: grid;
+  place-items: center;
+  border: 2px solid currentColor;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.28);
+  font-size: 2.65rem;
+  font-weight: 950;
+  line-height: 1;
+  text-shadow: 0 0 14px currentColor;
+  box-shadow: 0 0 18px color-mix(in srgb, currentColor 55%, transparent);
+}
+
+.relation-badge.good {
+  color: var(--gold);
+}
+
+.relation-badge.warn {
+  color: var(--orange);
+}
+
+.relation-badge.bad {
+  color: var(--bad);
+}
+
+.relation-badge.neutral {
+  color: var(--soft);
 }
 
 .placement.good {
@@ -1026,6 +1135,10 @@ h1 span {
     font-size: 0.68rem;
   }
 
+  .meter-label em {
+    font-size: 0.48rem;
+  }
+
   .meter-label strong {
     width: 46px;
     height: 46px;
@@ -1057,7 +1170,7 @@ h1 span {
   }
 
   .guest-chip {
-    grid-template-columns: 44px 1fr;
+    grid-template-columns: 44px 1fr 38px;
     column-gap: 8px;
     row-gap: 2px;
     margin-top: 5px;
@@ -1084,6 +1197,13 @@ h1 span {
     padding: 0;
     font-size: 0.58rem;
     line-height: 1.1;
+  }
+
+  .relation-badge {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    font-size: 1.5rem;
   }
 
   .drop-track {

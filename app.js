@@ -91,6 +91,7 @@ const state = {
   tickMs: 1250,
   dropStarted: 0,
   dropWindow: 3600,
+  tutorialTimer: null,
   lastStep: 0,
   lastSecond: 0,
 };
@@ -110,6 +111,7 @@ const messageEl = document.querySelector("#message");
 const comboList = document.querySelector("#comboList");
 const regularsEl = document.querySelector("#regulars");
 const overlay = document.querySelector("#gameOver");
+const tutorial = document.querySelector("#tutorial");
 
 function weightedGuest() {
   const total = guestTypes.reduce((sum, guest) => sum + guest.weight, 0);
@@ -144,12 +146,13 @@ function resetGame() {
   state.streaks = [0, 0, 0, 0, 0];
   state.regulars = [];
   state.running = true;
-  state.tickMs = 1250;
+  state.tickMs = 1700;
   seedOpeningFloor();
   state.lastStep = performance.now();
   state.lastSecond = performance.now();
   setDropWindow(performance.now());
   overlay.classList.add("hidden");
+  showTutorial();
   comboList.innerHTML = "";
   addCombo("シャンパンコール", "全列から1人ずつ消去 / 空気大UP");
   addCombo("ボトル入り（ガチ恋）", "空気UP / 処理少し進行");
@@ -175,19 +178,19 @@ function seedOpeningFloor() {
 }
 
 function serviceTurns(guest, col) {
-  let turns = guest.base;
+  let turns = guest.base + 2;
   const preferred = isPreferred(guest, col);
 
-  if (preferred) turns -= guest.id === "gachikoi" ? 4 : 2;
+  if (preferred) turns -= guest.id === "gachikoi" ? 2 : 1;
   if (!preferred) turns += guest.id === "vip" ? 2 : 1;
   if (guest.vipTarget !== null && col !== guest.vipTarget) turns += 2;
-  if (casts[col].name === "営業" && guest.id === "futoi") turns -= 1;
-  if (casts[col].name === "ベテラン" && guest.id === "vip") turns -= 1;
+  if (casts[col].name === "営業" && guest.id === "futoi") turns -= 0.5;
+  if (casts[col].name === "ベテラン" && guest.id === "vip") turns -= 0.5;
   if (casts[col].name === "新人") turns += 1;
   if (state.ambient >= 82) turns -= 1;
   if (state.ambient <= 32) turns += 1;
 
-  return Math.max(1, turns);
+  return Math.max(2, Math.ceil(turns));
 }
 
 function tileForGuest(guest, col) {
@@ -268,7 +271,7 @@ function hasFavoriteNeighbor(tile) {
 function stepService() {
   if (!state.running) return;
 
-  const speed = state.ambient >= 76 ? 2 : 1;
+  const speed = state.ambient >= 88 ? 2 : 1;
   const cleared = [];
 
   for (let row = ROWS - 1; row >= 0; row -= 1) {
@@ -341,7 +344,7 @@ function handleCombo(col) {
 function speedColumn(col) {
   for (let row = 0; row < ROWS; row += 1) {
     const tile = state.board[row][col];
-    if (tile) tile.turns = Math.max(1, tile.turns - 2);
+    if (tile) tile.turns = Math.max(1, tile.turns - 1);
   }
 }
 
@@ -381,12 +384,12 @@ function collapseBoard() {
 
 function changeAmbient(amount) {
   state.ambient = Math.max(0, Math.min(100, state.ambient + amount));
-  state.tickMs = Math.max(520, 1450 - state.ambient * 7);
+  state.tickMs = Math.max(820, 1900 - state.ambient * 8);
 }
 
 function setDropWindow(now = performance.now()) {
   state.dropStarted = now;
-  state.dropWindow = Math.max(1500, 4700 - state.ambient * 24);
+  state.dropWindow = Math.max(1200, 3900 - state.ambient * 20);
 }
 
 function addCombo(title, value) {
@@ -405,10 +408,10 @@ function isPreferred(guest, col) {
 }
 
 function placementRead(guest, col) {
-  if (guest.vipTarget !== null && col !== guest.vipTarget) return { label: "指名外", tone: "bad" };
-  if (hasFavoriteInNeighborColumn(guest.favorite, col)) return { label: "推し被り注意", tone: "warn" };
-  if (isPreferred(guest, col)) return { label: "推し一致", tone: "good" };
-  return { label: "通常接客", tone: "neutral" };
+  if (guest.vipTarget !== null && col !== guest.vipTarget) return { icon: "×", label: "指名外", tone: "bad" };
+  if (hasFavoriteInNeighborColumn(guest.favorite, col)) return { icon: "⚠", label: "推し被り", tone: "warn" };
+  if (isPreferred(guest, col)) return { icon: "◎", label: "推し一致", tone: "good" };
+  return { icon: "・", label: "通常接客", tone: "neutral" };
 }
 
 function hasFavoriteInNeighborColumn(favorite, col) {
@@ -431,6 +434,8 @@ function render() {
 
   ambientValue.textContent = Math.round(state.ambient);
   ambientFill.style.width = `${state.ambient}%`;
+  document.body.classList.toggle("air-high", state.ambient >= 80);
+  document.body.classList.toggle("air-low", state.ambient <= 30);
   scoreValue.textContent = formatMoney(state.score);
   timeValue.textContent = formatTime(state.time);
   complaintValue.textContent = `${state.complaints}/3`;
@@ -517,11 +522,21 @@ function renderGuest(el, guest) {
   const readout = read ? `<span class="placement ${read.tone}">${read.label}</span>` : "";
   const turns = serviceTurns(guest, state.selectedCol);
   el.innerHTML = `
+    ${read ? `<span class="relation-badge ${read.tone}">${read.icon}</span>` : ""}
     <span class="guest-name">${guest.label}</span>
     <span class="guest-meta"><span class="cast-dot"></span>推し:${casts[guest.favorite].name}${target}</span>
     <span class="guest-meta">満足ターン ${turns}</span>
     ${readout}
   `;
+}
+
+function showTutorial() {
+  if (!tutorial) return;
+  tutorial.classList.remove("hide");
+  if (state.tutorialTimer) clearTimeout(state.tutorialTimer);
+  state.tutorialTimer = setTimeout(() => {
+    tutorial.classList.add("hide");
+  }, 3000);
 }
 
 function nextCallInfo(col) {

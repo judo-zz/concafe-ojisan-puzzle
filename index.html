@@ -9,6 +9,10 @@
   <body>
     <main class="app-shell">
       <section class="game-panel" aria-label="コンカフェおじさん落ちものパズル">
+        <div id="tutorial" class="tutorial" aria-hidden="true">
+          <strong>推し列に置け！</strong>
+          <span>推し一致◎ / 被り⚠ / 指名外×</span>
+        </div>
         <header class="topbar">
           <div>
             <h1><span class="title-main">コンカフェおじさん</span><span class="title-sub">落ちものパズル</span></h1>
@@ -25,6 +29,7 @@
             <div class="meter-label">
               <span>空気</span>
               <strong id="ambientValue">70</strong>
+              <em>高いほど処理加速</em>
             </div>
             <div class="meter-track" aria-hidden="true">
               <div id="ambientFill" class="meter-fill"></div>
