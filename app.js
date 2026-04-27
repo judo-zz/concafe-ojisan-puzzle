@@ -98,6 +98,7 @@ const state = {
   lastSecond: 0,
   bestScore: loadBestScore(),
   lastResult: null,
+  autoAim: true,
 };
 
 const startScreen = document.querySelector("#startScreen");
@@ -146,7 +147,8 @@ function activeGuestTypes() {
 }
 
 function makeGuest(type) {
-  const favorite = Math.floor(Math.random() * COLS);
+  const preferred = preferredColumnForGuest(type.id);
+  const favorite = preferred ?? Math.floor(Math.random() * COLS);
   const vipTarget = type.id === "vip" ? favorite : null;
   return {
     ...type,
@@ -170,7 +172,7 @@ function resetGame() {
   state.time = SHIFT_SECONDS;
   state.current = starterGuest();
   state.next = weightedGuest();
-  state.selectedCol = targetColumns(state.current)[0];
+  state.selectedCol = bestColumnForGuest(state.current);
   state.score = 0;
   state.ambient = 70;
   state.complaints = 0;
@@ -181,6 +183,7 @@ function resetGame() {
   state.tickMs = 1700;
   state.lastStep = performance.now();
   state.lastSecond = performance.now();
+  state.autoAim = true;
   setDropWindow(performance.now());
   overlay.classList.add("hidden");
   floatLayer.innerHTML = "";
@@ -242,7 +245,8 @@ function placeCurrent(col = state.selectedCol) {
   playSound(feedback.sound);
   state.current = state.next;
   state.next = weightedGuest();
-  state.selectedCol = targetColumns(state.current)[0] ?? col;
+  state.selectedCol = bestColumnForGuest(state.current, col);
+  state.autoAim = true;
   setDropWindow();
   render();
 }
@@ -303,6 +307,7 @@ function stepService() {
 
   for (const clear of cleared) clearTile(clear);
   collapseBoard();
+  if (state.autoAim) state.selectedCol = bestColumnForGuest(state.current);
 
   if (state.complaints >= 3) {
     endGame("クレーマーを放置しすぎた！出禁が3回で営業終了。", "出禁3回");
@@ -437,7 +442,33 @@ function targetColumns(guest) {
   if (!guest) return [];
   if (guest.id === "uwaki") return Array.from({ length: COLS }, (_, index) => index);
   if (guest.vipTarget !== null) return [guest.vipTarget];
-  return [guest.favorite];
+  return [preferredColumnForGuest(guest.id) ?? guest.favorite];
+}
+
+function preferredColumnForGuest(id) {
+  const columns = {
+    futoi: 0,
+    gachikoi: 1,
+    claimer: 1,
+    usui: 2,
+    doutan: 3,
+    vip: 4,
+  };
+  return columns[id] ?? null;
+}
+
+function bestColumnForGuest(guest, fallback = state.selectedCol) {
+  const heights = columnHeights();
+  const openColumns = heights
+    .map((height, col) => ({ col, height }))
+    .filter((item) => item.height < ROWS)
+    .sort((a, b) => a.height - b.height || Math.abs(a.col - fallback) - Math.abs(b.col - fallback));
+  if (!openColumns.length) return fallback;
+
+  const targets = targetColumns(guest);
+  const openTarget = openColumns.find((item) => targets.includes(item.col));
+  if (openTarget) return openTarget.col;
+  return openColumns[0].col;
 }
 
 function render() {
@@ -538,6 +569,7 @@ function renderCasts() {
       <span class="call-dots">${call.dots}</span>
     `;
     button.addEventListener("click", () => {
+      state.autoAim = false;
       state.selectedCol = col;
       render();
     });
@@ -602,6 +634,7 @@ function nextCallInfo(col) {
 
 function gameLoop(now) {
   if (state.running) {
+    if (state.autoAim) state.selectedCol = bestColumnForGuest(state.current);
     const dropProgress = Math.min(1, (now - state.dropStarted) / state.dropWindow);
     dropFill.style.width = `${Math.max(0, 100 - dropProgress * 100)}%`;
 
@@ -677,6 +710,7 @@ function formatTime(value) {
 
 function moveSelection(delta) {
   if (!state.running) return;
+  state.autoAim = false;
   state.selectedCol = (state.selectedCol + delta + COLS) % COLS;
   render();
 }
