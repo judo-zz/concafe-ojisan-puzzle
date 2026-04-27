@@ -11,13 +11,33 @@ const TUTORIAL_STEPS = [
   "3手目: 3つで常連に進化!",
 ];
 const BEST_SCORE_KEY = "ojisan-poipoi-best-score-v3";
+const SERVICE_TURN_BONUS = 2;
+const DIFFICULTY_ORDER = ["easy", "normal", "hard"];
+
+const difficulties = {
+  easy: {
+    label: "かんたん",
+    dropWindowMultiplier: 1,
+    copy: "基本客だけ",
+  },
+  normal: {
+    label: "ふつう",
+    dropWindowMultiplier: 0.94,
+    copy: "種類+少しテンポUP",
+  },
+  hard: {
+    label: "むずかしい",
+    dropWindowMultiplier: 0.88,
+    copy: "多種多様+テンポUP",
+  },
+};
 
 const casts = [
-  { name: "みじゅ", trait: "常連/太客が得意", detail: "常連・太客 x2.0", color: "#2fb8ff", asset: "assets/casts/miju.png" },
-  { name: "ちゃき", trait: "クレーム処理", detail: "クレーマー/仲間 x3.0", color: "#ff4fae", asset: "assets/casts/chaki.png" },
-  { name: "なの", trait: "薄客育成係", detail: "薄客 x1.8", color: "#9be65e", asset: "assets/casts/nano.png" },
-  { name: "いずも", trait: "空気回復", detail: "回収で空気UP", color: "#aa58ff", asset: "assets/casts/izumo.png" },
-  { name: "ゆめ", trait: "VIP/神客担当", detail: "VIP・神客 x2.5", color: "#ffd21e", asset: "assets/casts/yume.png" },
+  { name: "みじゅ", trait: "常連/太客が得意", detail: "会社員もOK", color: "#2fb8ff", asset: "assets/casts/miju.png" },
+  { name: "ちゃき", trait: "感情客に強い", detail: "クレーム系 x3", color: "#ff4fae", asset: "assets/casts/chaki.png" },
+  { name: "なの", trait: "薄客育成係", detail: "迷子もOK", color: "#9be65e", asset: "assets/casts/nano.png" },
+  { name: "いずも", trait: "空気回復", detail: "疲れ客もOK", color: "#aa58ff", asset: "assets/casts/izumo.png" },
+  { name: "ゆめ", trait: "VIP/神客担当", detail: "兄客もOK", color: "#ffd21e", asset: "assets/casts/yume.png" },
 ];
 
 const guestTypes = [
@@ -28,9 +48,113 @@ const guestTypes = [
     color: "#9aa4ad",
     base: 10,
     points: 30,
-    weight: 26,
+    weight: 34,
     asset: "assets/ojisan/usui.png",
     note: "3つで常連！",
+  },
+  {
+    id: "office",
+    label: "会社員",
+    tier: 0,
+    color: "#7aa8d8",
+    base: 12,
+    points: 34,
+    weight: 10,
+    asset: "assets/ojisan/office.png",
+    note: "名刺きた！",
+    minDifficulty: "normal",
+    unlockAt: 0,
+  },
+  {
+    id: "shy",
+    label: "照れ客",
+    tier: 0,
+    color: "#f3a0b8",
+    base: 13,
+    points: 36,
+    weight: 9,
+    asset: "assets/ojisan/shy.png",
+    note: "照れてる！",
+    minDifficulty: "normal",
+    unlockAt: 10,
+  },
+  {
+    id: "gachikoi",
+    label: "ガチ恋",
+    tier: 0,
+    color: "#ea6f91",
+    base: 14,
+    points: 42,
+    weight: 7,
+    asset: "assets/ojisan/gachikoi.png",
+    note: "ハート多め！",
+    minDifficulty: "normal",
+    unlockAt: 22,
+  },
+  {
+    id: "host",
+    label: "兄客",
+    tier: 0,
+    color: "#c89f67",
+    base: 12,
+    points: 40,
+    weight: 6,
+    asset: "assets/ojisan/host.png",
+    note: "ノリ軽め！",
+    minDifficulty: "hard",
+    unlockAt: 0,
+  },
+  {
+    id: "tired",
+    label: "疲れ客",
+    tier: 0,
+    color: "#8f8f9b",
+    base: 15,
+    points: 44,
+    weight: 5,
+    asset: "assets/ojisan/tired.png",
+    note: "おつかれ！",
+    minDifficulty: "hard",
+    unlockAt: 14,
+  },
+  {
+    id: "lost",
+    label: "迷子",
+    tier: 0,
+    color: "#7fc6d8",
+    base: 11,
+    points: 32,
+    weight: 5,
+    asset: "assets/ojisan/lost.png",
+    note: "迷ってる！",
+    minDifficulty: "hard",
+    unlockAt: 20,
+  },
+  {
+    id: "uwaki",
+    label: "浮気性",
+    tier: 0,
+    color: "#4bc2c5",
+    base: 11,
+    points: 38,
+    weight: 5,
+    asset: "assets/ojisan/uwaki.png",
+    note: "目移り中！",
+    minDifficulty: "hard",
+    unlockAt: 30,
+  },
+  {
+    id: "doutan",
+    label: "同担拒否",
+    tier: 0,
+    color: "#f08a5d",
+    base: 13,
+    points: 46,
+    weight: 4,
+    asset: "assets/ojisan/doutan.png",
+    note: "ムッとしてる！",
+    minDifficulty: "hard",
+    unlockAt: 38,
   },
   {
     id: "jouren",
@@ -101,11 +225,11 @@ const guestTypes = [
 ];
 
 const castAffinities = [
-  { bestIds: ["jouren", "futoi"], multiplier: 2, label: "常連/太客 x2" },
-  { bestIds: ["claimer", "kujou"], multiplier: 3, label: "クレーム x3" },
-  { bestIds: ["usui"], multiplier: 1.8, label: "薄客 x1.8" },
-  { bestIds: [], multiplier: 1, label: "空気 +8" },
-  { bestIds: ["vip", "kamikaku"], multiplier: 2.5, label: "VIP/神客 x2.5" },
+  { bestIds: ["jouren", "futoi", "office"], multiplier: 2, label: "常連/会社員 x2" },
+  { bestIds: ["claimer", "kujou", "gachikoi", "doutan"], multiplier: 3, label: "感情客 x3" },
+  { bestIds: ["usui", "shy", "lost"], multiplier: 1.8, label: "薄客/迷子 x1.8" },
+  { bestIds: ["tired", "uwaki"], multiplier: 1.6, label: "空気 +8" },
+  { bestIds: ["vip", "kamikaku", "host"], multiplier: 2.5, label: "VIP/兄客 x2.5" },
 ];
 
 const tierLabels = ["薄", "常", "太", "VIP", "神"];
@@ -126,7 +250,8 @@ const state = {
   tutorialTimer: null,
   lastStep: 0,
   lastSecond: 0,
-  bestScore: loadBestScore(),
+  bestScore: 0,
+  difficulty: "easy",
   lastResult: null,
   placements: 0,
   merges: 0,
@@ -139,6 +264,8 @@ const state = {
   checkoutTutorialActive: false,
   tutorialStep: 0,
 };
+
+state.bestScore = loadBestScore();
 
 const startScreen = document.querySelector("#startScreen");
 const gamePanel = document.querySelector("#gamePanel");
@@ -162,6 +289,7 @@ const floatLayer = document.querySelector("#floatLayer");
 const resultTitle = document.querySelector("#resultTitle");
 const resultReason = document.querySelector("#resultReason");
 const shareButton = document.querySelector("#shareButton");
+const difficultyButtons = Array.from(document.querySelectorAll(".difficulty-button"));
 let audioContext = null;
 
 function weightedGuest() {
@@ -179,12 +307,27 @@ function activeGuestTypes() {
   const elapsed = SHIFT_SECONDS - state.time;
   return guestTypes.filter((guest) => {
     if (guest.weight <= 0) return false;
+    if (!isGuestAvailableForDifficulty(guest)) return false;
+    if (guest.unlockAt && elapsed < guest.unlockAt) return false;
     if (guest.id === "jouren") return elapsed >= 6;
     if (guest.id === "futoi") return elapsed >= 22;
     if (guest.id === "vip") return elapsed >= 35;
     if (guest.id === "claimer") return elapsed >= 20;
     return true;
   });
+}
+
+function difficultyRank(value = state.difficulty) {
+  return Math.max(0, DIFFICULTY_ORDER.indexOf(value));
+}
+
+function isGuestAvailableForDifficulty(guest) {
+  if (!guest.minDifficulty) return true;
+  return difficultyRank() >= difficultyRank(guest.minDifficulty);
+}
+
+function difficultyConfig() {
+  return difficulties[state.difficulty] || difficulties.easy;
 }
 
 function makeGuest(type) {
@@ -211,6 +354,7 @@ function tutorialGuest() {
 function resetGame() {
   initAudio();
   document.body.classList.remove("result-open");
+  const config = difficultyConfig();
   state.started = true;
   state.board = Array.from({ length: ROWS }, () => Array(COLS).fill(null));
   state.time = SHIFT_SECONDS;
@@ -237,7 +381,7 @@ function resetGame() {
   setDropWindow(performance.now());
   overlay.classList.add("hidden");
   floatLayer.innerHTML = "";
-  showTutorial("3つ並べて育てろ！", "神客でフィーバー突入");
+  showTutorial("3つ並べて育てろ！", `${config.label} / ${config.copy}`);
   messageEl.textContent = TUTORIAL_STEPS[0];
   render();
 }
@@ -249,8 +393,19 @@ function startGame() {
   resetGame();
 }
 
+function setDifficulty(value) {
+  if (!difficulties[value] || state.running) return;
+  state.difficulty = value;
+  state.bestScore = loadBestScore();
+  difficultyButtons.forEach((button) => {
+    const active = button.dataset.difficulty === value;
+    button.classList.toggle("active", active);
+    button.setAttribute("aria-pressed", String(active));
+  });
+}
+
 function serviceTurns(guest, col) {
-  let turns = guest.base;
+  let turns = guest.base + SERVICE_TURN_BONUS;
   if (castMultiplier(guest, col) > 1) turns -= 2;
   if (state.ambient <= 32) turns += 2;
 
@@ -594,8 +749,10 @@ function changeAmbient(amount) {
 
 function setDropWindow(now = performance.now()) {
   state.dropStarted = now;
+  const config = difficultyConfig();
   const feverBonus = isFeverActive(now) ? 900 : 0;
-  state.dropWindow = Math.max(2400, Math.min(5400, 2400 + state.ambient * 16 + feverBonus));
+  const baseWindow = (2400 + state.ambient * 16 + feverBonus) * config.dropWindowMultiplier;
+  state.dropWindow = Math.max(2100, Math.min(5400, baseWindow));
 }
 
 function isFeverActive(now = performance.now()) {
@@ -649,7 +806,15 @@ function preferredColumnForGuest(id) {
     futoi: 0,
     claimer: 1,
     kujou: 1,
+    gachikoi: 1,
+    doutan: 1,
     usui: 2,
+    shy: 2,
+    lost: 2,
+    tired: 3,
+    uwaki: 3,
+    office: 0,
+    host: 4,
     kamikaku: 4,
     vip: 4,
   };
@@ -1011,6 +1176,7 @@ function endGame(copy, reason = "営業終了") {
 }
 
 function resultHint(reason) {
+  if (state.difficulty === "hard" && state.score > 0) return "むずかしい完走はかなり強い。次は神客フィーバー中の会計を狙おう。";
   if (state.feverCount > 0) return "神客フィーバー中の会計は売上2倍。次はフィーバー中に高ランク客を回収しよう。";
   if (state.bestChain >= 3) return "連鎖の形はできてる。VIPを3つ集めたら神客が見える。";
   if (state.merges >= 4) return "育成は順調。高ランク客はゆめ列で回収すると売上が伸びる。";
@@ -1020,7 +1186,7 @@ function resultHint(reason) {
 
 function loadBestScore() {
   try {
-    return Number(localStorage.getItem(BEST_SCORE_KEY)) || 0;
+    return Number(localStorage.getItem(bestScoreKey())) || 0;
   } catch {
     return 0;
   }
@@ -1030,10 +1196,14 @@ function updateBestScore() {
   if (state.score <= state.bestScore) return;
   state.bestScore = state.score;
   try {
-    localStorage.setItem(BEST_SCORE_KEY, String(state.bestScore));
+    localStorage.setItem(bestScoreKey(), String(state.bestScore));
   } catch {
     // localStorage may be unavailable in strict browser modes.
   }
+}
+
+function bestScoreKey() {
+  return `${BEST_SCORE_KEY}-${state.difficulty || "easy"}`;
 }
 
 function deriveResultTitle(reason, isBest) {
@@ -1152,6 +1322,9 @@ document.querySelector("#dropButton").addEventListener("click", () => placeCurre
 document.querySelector("#startButton").addEventListener("click", startGame);
 document.querySelector("#restartButton").addEventListener("click", resetGame);
 document.querySelector("#againButton").addEventListener("click", resetGame);
+difficultyButtons.forEach((button) => {
+  button.addEventListener("click", () => setDifficulty(button.dataset.difficulty));
+});
 shareButton.addEventListener("click", shareResult);
 document.addEventListener("pointerdown", initAudio, { once: true });
 gamePanel.addEventListener("touchstart", handleTouchStart, { passive: true });
@@ -1179,4 +1352,5 @@ window.addEventListener("keydown", (event) => {
   if (event.key.toLowerCase() === "r") resetGame();
 });
 
+setDifficulty(state.difficulty);
 requestAnimationFrame(gameLoop);
