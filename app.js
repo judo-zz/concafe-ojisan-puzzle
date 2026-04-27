@@ -98,7 +98,6 @@ const state = {
   lastSecond: 0,
   bestScore: loadBestScore(),
   lastResult: null,
-  autoAim: true,
 };
 
 const startScreen = document.querySelector("#startScreen");
@@ -183,7 +182,6 @@ function resetGame() {
   state.tickMs = 1700;
   state.lastStep = performance.now();
   state.lastSecond = performance.now();
-  state.autoAim = true;
   setDropWindow(performance.now());
   overlay.classList.add("hidden");
   floatLayer.innerHTML = "";
@@ -246,7 +244,6 @@ function placeCurrent(col = state.selectedCol) {
   state.current = state.next;
   state.next = weightedGuest();
   state.selectedCol = bestColumnForGuest(state.current, col);
-  state.autoAim = true;
   setDropWindow();
   render();
 }
@@ -307,7 +304,6 @@ function stepService() {
 
   for (const clear of cleared) clearTile(clear);
   collapseBoard();
-  if (state.autoAim) state.selectedCol = bestColumnForGuest(state.current);
 
   if (state.complaints >= 3) {
     endGame("クレーマーを放置しすぎた！出禁が3回で営業終了。", "出禁3回");
@@ -569,7 +565,6 @@ function renderCasts() {
       <span class="call-dots">${call.dots}</span>
     `;
     button.addEventListener("click", () => {
-      state.autoAim = false;
       state.selectedCol = col;
       render();
     });
@@ -634,7 +629,6 @@ function nextCallInfo(col) {
 
 function gameLoop(now) {
   if (state.running) {
-    if (state.autoAim) state.selectedCol = bestColumnForGuest(state.current);
     const dropProgress = Math.min(1, (now - state.dropStarted) / state.dropWindow);
     dropFill.style.width = `${Math.max(0, 100 - dropProgress * 100)}%`;
 
@@ -710,7 +704,6 @@ function formatTime(value) {
 
 function moveSelection(delta) {
   if (!state.running) return;
-  state.autoAim = false;
   state.selectedCol = (state.selectedCol + delta + COLS) % COLS;
   render();
 }
