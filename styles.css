@@ -726,22 +726,30 @@ h1 {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 4px;
-  padding: 3px 6px;
+  gap: 3px;
+  padding: 3px 5px;
   border: 3px solid var(--line);
   border-radius: 999px;
   background: rgba(255, 253, 242, 0.94);
   box-shadow: 0 3px 0 rgba(53, 40, 31, 0.16);
-  font-size: 0.7rem;
+  font-size: clamp(0.56rem, 2.35vw, 0.7rem);
   font-weight: 950;
   white-space: nowrap;
+  overflow: hidden;
 }
 
 .evolution-bar span,
 .evolution-bar strong {
-  padding: 1px 6px;
+  padding: 1px 5px;
   border-radius: 999px;
   background: #f3ead2;
+}
+
+.evolution-bar .evolution-materials {
+  max-width: 54%;
+  overflow: hidden;
+  text-overflow: clip;
+  background: #fff5d7;
 }
 
 .evolution-bar strong {

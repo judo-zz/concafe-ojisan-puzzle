@@ -1,7 +1,6 @@
 const COLS = 5;
 const ROWS = 5;
 const SHIFT_SECONDS = 90;
-const COMPLAINT_LIMIT = 5;
 const FEVER_DURATION_MS = 12000;
 const SERVICE_TICK_MS = 1900;
 const TUTORIAL_COL = 2;
@@ -18,16 +17,19 @@ const difficulties = {
   easy: {
     label: "かんたん",
     dropWindowMultiplier: 1,
+    complaintLimit: 5,
     copy: "基本客だけ",
   },
   normal: {
     label: "ふつう",
     dropWindowMultiplier: 0.94,
+    complaintLimit: 3,
     copy: "種類+少しテンポUP",
   },
   hard: {
     label: "むずかしい",
     dropWindowMultiplier: 0.88,
+    complaintLimit: 2,
     copy: "多種多様+テンポUP",
   },
 };
@@ -271,6 +273,7 @@ const startScreen = document.querySelector("#startScreen");
 const gamePanel = document.querySelector("#gamePanel");
 const boardEl = document.querySelector("#board");
 const castsEl = document.querySelector("#casts");
+const evolutionBar = document.querySelector(".evolution-bar");
 const ambientValue = document.querySelector("#ambientValue");
 const ambientFill = document.querySelector("#ambientFill");
 const scoreValue = document.querySelector("#scoreValue");
@@ -330,6 +333,14 @@ function difficultyConfig() {
   return difficulties[state.difficulty] || difficulties.easy;
 }
 
+function complaintLimit() {
+  return difficultyConfig().complaintLimit;
+}
+
+function shouldRunTutorial() {
+  return state.difficulty === "easy";
+}
+
 function makeGuest(type) {
   const favorite = preferredColumnForGuest(type.id) ?? Math.floor(Math.random() * COLS);
   return {
@@ -355,11 +366,12 @@ function resetGame() {
   initAudio();
   document.body.classList.remove("result-open");
   const config = difficultyConfig();
+  const tutorialMode = shouldRunTutorial();
   state.started = true;
   state.board = Array.from({ length: ROWS }, () => Array(COLS).fill(null));
   state.time = SHIFT_SECONDS;
-  state.current = starterGuest();
-  state.next = tutorialGuest();
+  state.current = tutorialMode ? starterGuest() : weightedGuest();
+  state.next = tutorialMode ? tutorialGuest() : weightedGuest();
   state.selectedCol = TUTORIAL_COL;
   state.score = 0;
   state.ambient = 70;
@@ -373,16 +385,22 @@ function resetGame() {
   state.feverUntil = 0;
   state.feverCount = 0;
   state.autoDrops = 0;
-  state.tutorialActive = true;
+  state.tutorialActive = tutorialMode;
   state.checkoutTutorialActive = false;
   state.tutorialStep = 0;
   state.lastStep = performance.now();
   state.lastSecond = performance.now();
+  if (!tutorialMode) state.selectedCol = bestColumnForGuest(state.current);
   setDropWindow(performance.now());
   overlay.classList.add("hidden");
   floatLayer.innerHTML = "";
-  showTutorial("3つ並べて育てろ！", `${config.label} / ${config.copy}`);
-  messageEl.textContent = TUTORIAL_STEPS[0];
+  if (tutorialMode) {
+    showTutorial("3つ並べて育てろ！", `${config.label} / ${config.copy}`);
+    messageEl.textContent = TUTORIAL_STEPS[0];
+  } else {
+    hideTutorial();
+    messageEl.textContent = `${config.label}: 3つで育てて高く会計!`;
+  }
   render();
 }
 
@@ -555,7 +573,7 @@ function stepService() {
   if (cleared.length) checkMergesAndChain();
   if (!state.running) return;
 
-  if (state.complaints >= COMPLAINT_LIMIT) {
+  if (state.complaints >= complaintLimit()) {
     endGame("クレーマーを放置しすぎた！クレーム満タンで営業終了。", "クレーム満タン");
   }
 
@@ -857,6 +875,7 @@ function nearestOpenColumn(fallback = state.selectedCol) {
 function render() {
   renderBoard();
   renderCasts();
+  renderEvolutionBar();
   renderGuest(currentGuest, state.current);
   renderGuest(nextGuest, state.next);
 
@@ -865,13 +884,48 @@ function render() {
   document.body.classList.toggle("air-high", state.ambient >= 80);
   document.body.classList.toggle("air-low", state.ambient <= 30);
   document.body.classList.toggle("fever", isFeverActive());
-  document.body.classList.toggle("complaint-high", state.complaints >= COMPLAINT_LIMIT - 1);
+  const maxComplaints = complaintLimit();
+  document.body.classList.toggle("complaint-high", state.complaints >= maxComplaints - 1);
   scoreValue.textContent = formatMoney(state.score);
   bestValue.textContent = `ベスト ${formatMoney(state.bestScore)}`;
   timeValue.textContent = formatTime(state.time);
   timeFill.style.width = `${Math.max(0, (state.time / SHIFT_SECONDS) * 100)}%`;
-  complaintValue.textContent = `${state.complaints}/${COMPLAINT_LIMIT}`;
-  complaintWarning.textContent = `あと${Math.max(0, COMPLAINT_LIMIT - state.complaints)}でGAME OVER`;
+  complaintValue.textContent = `${state.complaints}/${maxComplaints}`;
+  complaintWarning.textContent = `あと${Math.max(0, maxComplaints - state.complaints)}でGAME OVER`;
+}
+
+function renderEvolutionBar() {
+  if (!evolutionBar) return;
+  const materials = guestTypes
+    .filter((guest) => guest.tier === 0 && isGuestAvailableForDifficulty(guest))
+    .map((guest) => materialShortLabel(guest.id))
+    .join("・");
+  evolutionBar.innerHTML = `
+    <span class="evolution-materials">素材: ${materials}</span>
+    <i>→</i>
+    <span>常連</span>
+    <i>→</i>
+    <span>太客</span>
+    <i>→</i>
+    <span>VIP</span>
+    <i>→</i>
+    <strong>神客</strong>
+  `;
+}
+
+function materialShortLabel(id) {
+  const labels = {
+    usui: "薄",
+    office: "会",
+    shy: "照",
+    gachikoi: "ガ",
+    host: "兄",
+    tired: "疲",
+    lost: "迷",
+    uwaki: "浮",
+    doutan: "拒",
+  };
+  return labels[id] || id;
 }
 
 function renderBoard() {
@@ -1102,6 +1156,13 @@ function showTutorial(title = "3つ並べて育てろ！", copy = "神客でフ�
   }, 3000);
 }
 
+function hideTutorial() {
+  if (!tutorial) return;
+  if (state.tutorialTimer) clearTimeout(state.tutorialTimer);
+  state.tutorialTimer = null;
+  tutorial.classList.add("hide");
+}
+
 function columnDots(height) {
   return Array.from({ length: ROWS }, (_, index) => (
     `<i class="${index < height ? "filled" : ""}"></i>`
@@ -1180,7 +1241,7 @@ function resultHint(reason) {
   if (state.feverCount > 0) return "神客フィーバー中の会計は売上2倍。次はフィーバー中に高ランク客を回収しよう。";
   if (state.bestChain >= 3) return "連鎖の形はできてる。VIPを3つ集めたら神客が見える。";
   if (state.merges >= 4) return "育成は順調。高ランク客はゆめ列で回収すると売上が伸びる。";
-  if (state.complaints >= COMPLAINT_LIMIT) return "クレーマーは2つで苦情仲間。ちゃき列で会計すると強い。";
+  if (state.complaints >= complaintLimit()) return "クレーマーは2つで苦情仲間。ちゃき列で会計すると強い。";
   return "まずは薄客3つで常連、常連3つで太客を狙おう。";
 }
 
