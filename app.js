@@ -98,6 +98,12 @@ const state = {
   lastSecond: 0,
   bestScore: loadBestScore(),
   lastResult: null,
+  placements: 0,
+  matches: 0,
+  bottles: 0,
+  champagnes: 0,
+  autoDrops: 0,
+  maxColumnStreak: 0,
 };
 
 const startScreen = document.querySelector("#startScreen");
@@ -120,6 +126,7 @@ const regularsEl = document.querySelector("#regulars");
 const overlay = document.querySelector("#gameOver");
 const tutorial = document.querySelector("#tutorial");
 const floatLayer = document.querySelector("#floatLayer");
+const resultTitle = document.querySelector("#resultTitle");
 const resultReason = document.querySelector("#resultReason");
 const shareButton = document.querySelector("#shareButton");
 let audioContext = null;
@@ -179,6 +186,12 @@ function resetGame() {
   state.regulars = [];
   state.running = true;
   state.lastResult = null;
+  state.placements = 0;
+  state.matches = 0;
+  state.bottles = 0;
+  state.champagnes = 0;
+  state.autoDrops = 0;
+  state.maxColumnStreak = 0;
   state.tickMs = 1700;
   state.lastStep = performance.now();
   state.lastSecond = performance.now();
@@ -225,7 +238,7 @@ function tileForGuest(guest, col) {
   };
 }
 
-function placeCurrent(col = state.selectedCol) {
+function placeCurrent(col = state.selectedCol, options = {}) {
   if (!state.running) return;
   initAudio();
 
@@ -239,11 +252,16 @@ function placeCurrent(col = state.selectedCol) {
   const tile = tileForGuest(state.current, col);
   state.board[row][col] = tile;
   const feedback = applyPlacementPressure(tile);
-  showFloat(feedback.text, feedback.tone);
-  playSound(feedback.sound);
+  state.placements += 1;
+  if (options.auto) state.autoDrops += 1;
+  const comboTriggered = advanceCallGauge(tile);
+  if (!comboTriggered) {
+    showFloat(feedback.text, feedback.tone);
+    playSound(feedback.sound);
+  }
   state.current = state.next;
   state.next = weightedGuest();
-  state.selectedCol = bestColumnForGuest(state.current, col);
+  state.selectedCol = nearestOpenColumn(col);
   setDropWindow();
   render();
 }
@@ -265,7 +283,10 @@ function applyPlacementPressure(tile) {
     feedback = { text: "指名外 -9", tone: "bad", sound: "bad" };
   } else if (col === guest.favorite || guest.id === "uwaki") {
     changeAmbient(2);
-    feedback = { text: guest.id === "uwaki" ? "どこでもOK +2" : "推し一致 +2", tone: "good", sound: "match" };
+    const bonus = guest.id === "uwaki" ? 6 : 12;
+    state.score += bonus;
+    state.matches += 1;
+    feedback = { text: `${guest.id === "uwaki" ? "どこでもOK" : "推し一致"} +${formatMoney(bonus)}`, tone: "good", sound: "match" };
   } else {
     changeAmbient(-2);
     feedback = { text: "推し違い -2", tone: "warn", sound: "place" };
@@ -323,18 +344,20 @@ function clearTile({ tile, row, col }) {
   if (guest.id === "vip" && casts[col].name === "ゆめ") points += 75;
 
   state.score += points;
-  state.streaks[col] += 1;
+  showColumnFloat(col, `+${formatMoney(points)}`, preferred ? "good" : "neutral");
 
   if (casts[col].name === "いずも") changeAmbient(2);
   if (guest.id === "futoi") changeAmbient(5);
   if (guest.id === "claimer") changeAmbient(4);
 
   maybeRegularize(guest, points);
-  handleCombo(col);
 }
 
 function handleCombo(col) {
+  let triggered = false;
   if (state.streaks[col] === 3) {
+    triggered = true;
+    state.bottles += 1;
     changeAmbient(12);
     speedColumn(col);
     addCombo(`${casts[col].name}列`, "ボトル入り");
@@ -344,13 +367,28 @@ function handleCombo(col) {
   }
 
   if (state.streaks[col] > 0 && state.streaks[col] % 5 === 0) {
+    triggered = true;
+    state.champagnes += 1;
     changeAmbient(22);
-    clearOneEachColumn();
+    cheerOneEachColumn();
     addCombo(`${casts[col].name}列`, "シャンパンコール");
     say("シャンパン！");
     showFloat("シャンパン！", "good");
     playSound("combo");
   }
+  return triggered;
+}
+
+function advanceCallGauge(tile) {
+  const col = tile.col;
+  if (!tile.matched) {
+    state.streaks[col] = Math.max(0, state.streaks[col] - 1);
+    return false;
+  }
+
+  state.streaks[col] += 1;
+  state.maxColumnStreak = Math.max(state.maxColumnStreak, state.streaks[col]);
+  return handleCombo(col);
 }
 
 function speedColumn(col) {
@@ -360,12 +398,12 @@ function speedColumn(col) {
   }
 }
 
-function clearOneEachColumn() {
+function cheerOneEachColumn() {
   for (let col = 0; col < COLS; col += 1) {
     for (let row = ROWS - 1; row >= 0; row -= 1) {
       if (state.board[row][col]) {
-        state.board[row][col] = null;
-        state.score += 40;
+        state.board[row][col].turns = Math.max(1, state.board[row][col].turns - 1);
+        state.score += 20;
         break;
       }
     }
@@ -424,6 +462,17 @@ function showFloat(text, tone = "neutral") {
   pop.addEventListener("animationend", () => pop.remove());
 }
 
+function showColumnFloat(col, text, tone = "neutral") {
+  if (!floatLayer) return;
+  const pop = document.createElement("div");
+  pop.className = `float-pop column-pop ${tone}`;
+  pop.textContent = text;
+  pop.style.left = `${((col + 0.5) / COLS) * 100}%`;
+  pop.style.top = "56%";
+  floatLayer.appendChild(pop);
+  pop.addEventListener("animationend", () => pop.remove());
+}
+
 function isPreferred(guest, col) {
   return targetColumns(guest).includes(col);
 }
@@ -467,6 +516,23 @@ function bestColumnForGuest(guest, fallback = state.selectedCol) {
   return openColumns[0].col;
 }
 
+function nearestOpenColumn(fallback = state.selectedCol) {
+  const heights = columnHeights();
+  if (heights[fallback] < ROWS) return fallback;
+  const openColumns = heights
+    .map((height, col) => ({ col, height }))
+    .filter((item) => item.height < ROWS)
+    .sort((a, b) => Math.abs(a.col - fallback) - Math.abs(b.col - fallback) || a.height - b.height);
+  return openColumns[0]?.col ?? fallback;
+}
+
+function callReachForCol(col) {
+  const streak = state.streaks[col];
+  if (streak > 0 && streak % 5 === 4) return "champagne";
+  if (streak === 2) return "bottle";
+  return "";
+}
+
 function render() {
   renderBoard();
   renderCasts();
@@ -492,6 +558,7 @@ function renderBoard() {
   const landingRow = lowestOpenRow(state.selectedCol);
   const heights = columnHeights();
   const preferredCols = targetColumns(state.current);
+  const selectedRead = placementRead(state.current, state.selectedCol);
 
   for (let row = 0; row < ROWS; row += 1) {
     for (let col = 0; col < COLS; col += 1) {
@@ -501,6 +568,10 @@ function renderBoard() {
       cell.setAttribute("aria-label", `${col + 1}列 ${row + 1}段`);
       if (col === state.selectedCol) cell.classList.add("target");
       if (preferredCols.includes(col)) cell.classList.add("preferred-column");
+      const reach = callReachForCol(col);
+      if (reach) cell.classList.add(`${reach}-reach`);
+      if (row === landingRow && col === state.selectedCol && reach) cell.dataset.reach = reach === "champagne" ? "シャンパン!" : "ボトル!";
+      if (row === landingRow && col === state.selectedCol && selectedRead.tone === "good") cell.dataset.read = selectedRead.icon;
       if (row === landingRow && col === state.selectedCol) cell.classList.add("ghost");
       if (heights[col] >= ROWS - 1) cell.classList.add("column-warning");
       if (heights[col] >= ROWS) cell.classList.add("column-full");
@@ -554,6 +625,8 @@ function renderCasts() {
     const button = document.createElement("button");
     button.type = "button";
     button.className = `cast${col === state.selectedCol ? " active" : ""}${preferredCols.includes(col) ? " preferred" : ""}`;
+    const reach = callReachForCol(col);
+    if (reach) button.classList.add(`${reach}-reach`);
     button.style.setProperty("--cast", cast.color);
     const call = nextCallInfo(col);
     button.innerHTML = `
@@ -618,7 +691,9 @@ function showTutorial() {
 function nextCallInfo(col) {
   const streak = state.streaks[col];
   let label = `ボトルあと${Math.max(0, 3 - Math.min(streak, 3))}`;
+  if (streak === 2) label = "次ボトル!";
   if (streak >= 3) label = `シャンパンあと${5 - (streak % 5 || 5)}`;
+  if (streak > 0 && streak % 5 === 4) label = "次シャンパン!";
   if (streak > 0 && streak % 5 === 0) label = "次コール待ち";
   const filled = streak % 5 || (streak > 0 ? 5 : 0);
   const dots = Array.from({ length: 5 }, (_, index) => (
@@ -634,7 +709,7 @@ function gameLoop(now) {
 
     if (dropProgress >= 1) {
       say("自動でポイ！");
-      placeCurrent();
+      placeCurrent(state.selectedCol, { auto: true });
     }
 
     if (now - state.lastSecond >= 1000) {
@@ -657,13 +732,17 @@ function gameLoop(now) {
 
 function endGame(copy, reason = "営業終了") {
   state.running = false;
+  const bestBefore = state.bestScore;
   updateBestScore();
+  const title = deriveResultTitle(reason, state.score > bestBefore);
   state.lastResult = {
     score: state.score,
     ambient: Math.round(state.ambient),
     regulars: state.regulars.length,
     reason,
+    title,
   };
+  resultTitle.textContent = title;
   resultReason.textContent = `敗因: ${reason}`;
   document.querySelector("#resultCopy").textContent = copy;
   document.querySelector("#finalScore").textContent = formatMoney(state.score);
@@ -690,6 +769,18 @@ function updateBestScore() {
   } catch {
     // localStorage may be unavailable in strict browser modes.
   }
+}
+
+function deriveResultTitle(reason, isBest) {
+  if (state.champagnes >= 2) return "シャンパン職人";
+  if (state.bottles >= 3) return "ボトル回しの名人";
+  if (state.complaints === 0 && state.ambient >= 80) return "空気よすぎ店長";
+  if (state.matches >= 18) return "推し席マスター";
+  if (state.autoDrops >= 5) return "ながら営業";
+  if (reason === "出禁3回") return "出禁対応係";
+  if (reason === "列が満席") return "満卓パニック";
+  if (isBest) return "本日の伝説営業";
+  return "本日の営業終了";
 }
 
 function formatMoney(value) {
@@ -751,7 +842,7 @@ function shareResult() {
     regulars: state.regulars.length,
     reason: "営業中",
   };
-  const text = `おじさんポイポイ！ 売上${formatMoney(result.score)} / 空気${result.ambient}% / 常連${result.regulars}人 #おじさんポイポイ`;
+  const text = `おじさんポイポイ！ ${result.title || "本日の営業終了"} / 売上${formatMoney(result.score)} / 空気${result.ambient}% / 常連${result.regulars}人 #おじさんポイポイ`;
   const url = "https://judo-zz.github.io/concafe-ojisan-puzzle/";
   const shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`;
   window.open(shareUrl, "_blank", "noopener,noreferrer");
