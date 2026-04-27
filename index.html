@@ -10,22 +10,37 @@
     <main class="app-shell">
       <section id="startScreen" class="start-screen" aria-label="タイトル画面">
         <div class="start-card">
-          <p>コンカフェ</p>
-          <h1><span class="title-main">おじさん</span><span class="title-sub">ポイポイ！</span></h1>
-          <div class="start-faces" aria-hidden="true">
-            <img src="assets/ojisan/futoi.png" alt="">
-            <img src="assets/ojisan/usui.png" alt="">
-            <img src="assets/ojisan/claimer.png" alt="">
-            <img src="assets/ojisan/uwaki.png" alt="">
+          <div class="start-deco" aria-hidden="true">
+            <span class="star star-a">★</span>
+            <span class="star star-b">♡</span>
+            <span class="star star-c">★</span>
+            <span class="star star-d">♡</span>
+          </div>
+          <p class="start-badge">コンカフェ</p>
+          <div class="title-stage">
+            <img class="start-oji start-oji-futoi" src="assets/ojisan/futoi.png" alt="">
+            <img class="start-oji start-oji-usui" src="assets/ojisan/usui.png" alt="">
+            <img class="start-oji start-oji-vip" src="assets/ojisan/vip.png" alt="">
+            <img class="start-oji start-oji-claimer" src="assets/ojisan/claimer.png" alt="">
+            <img class="start-oji start-oji-shy" src="assets/ojisan/shy.png" alt="">
+            <img class="start-oji start-oji-festival" src="assets/ojisan/festival.png" alt="">
+            <h1><span class="title-main">おじさん</span><span class="title-sub">ポイポイ！</span></h1>
           </div>
           <button id="startButton" class="start-button" type="button">営業開始</button>
+          <div class="start-casts" aria-hidden="true">
+            <img src="assets/casts/miju.png" alt="">
+            <img src="assets/casts/chaki.png" alt="">
+            <img src="assets/casts/nano.png" alt="">
+            <img src="assets/casts/izumo.png" alt="">
+            <img src="assets/casts/yume.png" alt="">
+          </div>
         </div>
       </section>
 
       <section id="gamePanel" class="game-panel" aria-label="コンカフェおじさん落ちものパズル" hidden>
         <div id="tutorial" class="tutorial" aria-hidden="true">
-          <strong>光る列に置け！</strong>
-          <span>クレーマーは早く帰そう</span>
+          <strong>3つ並べて育てろ！</strong>
+          <span>神客でフィーバー突入</span>
         </div>
         <button id="restartButton" class="restart-button" type="button" aria-label="リセット" title="リセット">リセット</button>
 
@@ -34,7 +49,7 @@
             <div class="meter-label">
               <span>空気</span>
               <strong id="ambientValue">70</strong>
-              <em>高いほど処理加速</em>
+              <em>猶予UP / 会計ボーナス</em>
             </div>
             <div class="meter-track" aria-hidden="true">
               <div id="ambientFill" class="meter-fill"></div>
@@ -47,13 +62,13 @@
           </div>
           <div class="stat">
             <span>残り時間</span>
-            <strong id="timeValue">150</strong>
-            <div class="mini-track" aria-hidden="true"><i></i></div>
+            <strong id="timeValue">1:30</strong>
+            <div class="mini-track" aria-hidden="true"><i id="timeFill"></i></div>
           </div>
           <div class="stat">
-            <span>出禁カウント</span>
-            <strong id="complaintValue">0/3</strong>
-            <em id="complaintWarning" class="danger-copy">あと3でGAME OVER</em>
+            <span>クレーム</span>
+            <strong id="complaintValue">0/5</strong>
+            <em id="complaintWarning" class="danger-copy">あと5でGAME OVER</em>
           </div>
         </div>
 
@@ -67,13 +82,25 @@
             <span>次</span>
             <div id="nextGuest" class="guest-chip small"></div>
           </div>
-          <div id="message" class="message">推し席ならすぐ満足！</div>
+          <div id="message" class="message">3つ並べて進化！</div>
+        </div>
+
+        <div class="evolution-bar" aria-label="進化ルート">
+          <span>薄客</span>
+          <i>→</i>
+          <span>常連</span>
+          <i>→</i>
+          <span>太客</span>
+          <i>→</i>
+          <span>VIP</span>
+          <i>→</i>
+          <strong>神客</strong>
         </div>
 
         <div class="playfield">
           <div class="field-sign">
             <span>FLOOR</span>
-            <span>光る列が正解</span>
+            <span>3つで進化</span>
           </div>
           <div id="board" class="board" aria-label="パズル盤面"></div>
           <div id="casts" class="casts" aria-label="キャスト"></div>
@@ -86,28 +113,6 @@
           <button id="rightButton" type="button" aria-label="みぎ">みぎ</button>
         </div>
       </section>
-
-      <aside class="side-panel">
-        <div class="legend" aria-label="凡例">
-          <span><b class="legend-heart">♡</b>推し一致（GOOD）</span>
-          <span><b class="legend-anger">※</b>クレーム注意（BAD）</span>
-          <span><b class="legend-ng">×</b>指名外（NG）</span>
-          <span><b class="legend-crown">♛</b>指名OK（VIP）</span>
-          <span><b class="legend-free">∞</b>推しフリー</span>
-        </div>
-        <div class="section">
-          <h2>営業記録</h2>
-          <ul id="comboList" class="combo-list"></ul>
-        </div>
-        <div class="section">
-          <h2>常連リスト</h2>
-          <div id="regulars" class="regulars"></div>
-        </div>
-        <div class="section">
-          <h2>シフトメモ</h2>
-          <p>光る列に置く。クレーマーは早めに帰す。赤い列は満席注意。VIPはゆめが得意。</p>
-        </div>
-      </aside>
     </main>
 
     <div id="gameOver" class="overlay hidden" role="dialog" aria-modal="true" aria-labelledby="resultTitle">
@@ -119,8 +124,10 @@
         <div class="result-grid">
           <div><span>売上</span><strong id="finalScore">0</strong></div>
           <div><span>空気</span><strong id="finalAmbient">0</strong></div>
-          <div><span>常連</span><strong id="finalRegulars">0</strong></div>
+          <div><span>最高連鎖</span><strong id="finalChain">0</strong></div>
+          <div><span>進化数</span><strong id="finalMerges">0</strong></div>
         </div>
+        <p id="finalHint" class="result-hint"></p>
         <button id="shareButton" class="share-button" type="button">結果をシェア</button>
         <button id="againButton" type="button">もう1シフト</button>
       </div>

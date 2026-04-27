@@ -1,81 +1,114 @@
 const COLS = 5;
 const ROWS = 5;
 const SHIFT_SECONDS = 90;
+const COMPLAINT_LIMIT = 5;
+const FEVER_DURATION_MS = 12000;
+const SERVICE_TICK_MS = 1900;
+const TUTORIAL_COL = 2;
+const TUTORIAL_STEPS = [
+  "1手目: 薄客をなの列へ",
+  "2手目: 同じ列へもう1人",
+  "3手目: 3つで常連に進化!",
+];
 const BEST_SCORE_KEY = "ojisan-poipoi-best-score-v3";
 
 const casts = [
-  { name: "みじゅ", trait: "太客処理のプロ", detail: "太客短縮 / 売上UP", color: "#2fb8ff", asset: "assets/casts/miju.png" },
-  { name: "ちゃき", trait: "接客スピード枠", detail: "少し早く帰せる", color: "#ff4fae", asset: "assets/casts/chaki.png" },
-  { name: "なの", trait: "低速だが個性枠", detail: "処理ターンやや長め", color: "#9be65e", asset: "assets/casts/nano.png" },
-  { name: "いずも", trait: "空気回復役", detail: "退店時に空気を少し回復", color: "#aa58ff", asset: "assets/casts/izumo.png" },
-  { name: "ゆめ", trait: "VIP対応のエース", detail: "VIP処理短縮 / 売上UP", color: "#ffd21e", asset: "assets/casts/yume.png" },
+  { name: "みじゅ", trait: "常連/太客が得意", detail: "常連・太客 x2.0", color: "#2fb8ff", asset: "assets/casts/miju.png" },
+  { name: "ちゃき", trait: "クレーム処理", detail: "クレーマー/仲間 x3.0", color: "#ff4fae", asset: "assets/casts/chaki.png" },
+  { name: "なの", trait: "薄客育成係", detail: "薄客 x1.8", color: "#9be65e", asset: "assets/casts/nano.png" },
+  { name: "いずも", trait: "空気回復", detail: "回収で空気UP", color: "#aa58ff", asset: "assets/casts/izumo.png" },
+  { name: "ゆめ", trait: "VIP/神客担当", detail: "VIP・神客 x2.5", color: "#ffd21e", asset: "assets/casts/yume.png" },
 ];
 
 const guestTypes = [
   {
-    id: "futoi",
-    label: "太客",
-    color: "#e1b453",
-    base: 4,
-    points: 95,
-    weight: 16,
-    note: "太客きた！",
-  },
-  {
     id: "usui",
     label: "薄客",
+    tier: 0,
     color: "#9aa4ad",
-    base: 3,
-    points: 22,
-    weight: 22,
-    note: "ふつう！",
+    base: 10,
+    points: 30,
+    weight: 26,
+    asset: "assets/ojisan/usui.png",
+    note: "3つで常連！",
   },
   {
-    id: "gachikoi",
-    label: "ガチ恋",
-    color: "#ea6f91",
-    base: 5,
-    points: 76,
-    weight: 0,
-    note: "ハート多め！",
+    id: "jouren",
+    label: "常連",
+    tier: 1,
+    color: "#4ecba0",
+    base: 13,
+    points: 105,
+    weight: 12,
+    asset: "assets/ojisan/dad.png",
+    note: "常連きた！",
   },
   {
-    id: "uwaki",
-    label: "浮気性",
-    color: "#4bc2c5",
-    base: 3,
-    points: 36,
-    weight: 18,
-    note: "どこでもOK！",
-  },
-  {
-    id: "claimer",
-    label: "クレーマー",
-    color: "#d95757",
-    base: 4,
-    points: 64,
-    weight: 10,
-    note: "早めに処理！",
+    id: "futoi",
+    label: "太客",
+    tier: 2,
+    color: "#e1b453",
+    base: 16,
+    points: 330,
+    weight: 7,
+    asset: "assets/ojisan/futoi.png",
+    note: "太客きた！",
   },
   {
     id: "vip",
     label: "VIP",
+    tier: 3,
     color: "#b88ee6",
-    base: 5,
-    points: 135,
-    weight: 4,
-    note: "指名あり！",
+    base: 20,
+    points: 900,
+    weight: 6,
+    asset: "assets/ojisan/vip.png",
+    note: "VIP！",
   },
   {
-    id: "doutan",
-    label: "同担拒否",
-    color: "#f08a5d",
-    base: 4,
-    points: 72,
+    id: "kamikaku",
+    label: "神客",
+    tier: 4,
+    color: "#ff4fae",
+    base: 26,
+    points: 3200,
     weight: 0,
-    note: "被り注意！",
+    asset: "assets/ojisan/festival.png",
+    note: "神客誕生！",
+  },
+  {
+    id: "claimer",
+    label: "クレーマー",
+    tier: -1,
+    color: "#d95757",
+    base: 9,
+    points: 0,
+    weight: 6,
+    asset: "assets/ojisan/claimer.png",
+    note: "2つで逆転！",
+  },
+  {
+    id: "kujou",
+    label: "苦情仲間",
+    tier: 2,
+    color: "#ff8c42",
+    base: 16,
+    points: 420,
+    weight: 0,
+    asset: "assets/ojisan/capglass.png",
+    note: "逆転チャンス！",
   },
 ];
+
+const castAffinities = [
+  { bestIds: ["jouren", "futoi"], multiplier: 2, label: "常連/太客 x2" },
+  { bestIds: ["claimer", "kujou"], multiplier: 3, label: "クレーム x3" },
+  { bestIds: ["usui"], multiplier: 1.8, label: "薄客 x1.8" },
+  { bestIds: [], multiplier: 1, label: "空気 +8" },
+  { bestIds: ["vip", "kamikaku"], multiplier: 2.5, label: "VIP/神客 x2.5" },
+];
+
+const tierLabels = ["薄", "常", "太", "VIP", "神"];
 
 const state = {
   board: [],
@@ -86,11 +119,8 @@ const state = {
   ambient: 70,
   time: SHIFT_SECONDS,
   complaints: 0,
-  streaks: [0, 0, 0, 0, 0],
-  regulars: [],
   running: false,
   started: false,
-  tickMs: 1250,
   dropStarted: 0,
   dropWindow: 3600,
   tutorialTimer: null,
@@ -99,11 +129,15 @@ const state = {
   bestScore: loadBestScore(),
   lastResult: null,
   placements: 0,
-  matches: 0,
-  bottles: 0,
-  champagnes: 0,
+  merges: 0,
+  bestChain: 0,
+  divineColumn: null,
+  feverUntil: 0,
+  feverCount: 0,
   autoDrops: 0,
-  maxColumnStreak: 0,
+  tutorialActive: false,
+  checkoutTutorialActive: false,
+  tutorialStep: 0,
 };
 
 const startScreen = document.querySelector("#startScreen");
@@ -115,14 +149,13 @@ const ambientFill = document.querySelector("#ambientFill");
 const scoreValue = document.querySelector("#scoreValue");
 const bestValue = document.querySelector("#bestValue");
 const timeValue = document.querySelector("#timeValue");
+const timeFill = document.querySelector("#timeFill");
 const complaintValue = document.querySelector("#complaintValue");
 const complaintWarning = document.querySelector("#complaintWarning");
 const currentGuest = document.querySelector("#currentGuest");
 const nextGuest = document.querySelector("#nextGuest");
 const dropFill = document.querySelector("#dropFill");
 const messageEl = document.querySelector("#message");
-const comboList = document.querySelector("#comboList");
-const regularsEl = document.querySelector("#regulars");
 const overlay = document.querySelector("#gameOver");
 const tutorial = document.querySelector("#tutorial");
 const floatLayer = document.querySelector("#floatLayer");
@@ -146,20 +179,20 @@ function activeGuestTypes() {
   const elapsed = SHIFT_SECONDS - state.time;
   return guestTypes.filter((guest) => {
     if (guest.weight <= 0) return false;
-    if (guest.id === "vip") return elapsed >= 30;
-    if (guest.id === "claimer") return elapsed >= 12;
+    if (guest.id === "jouren") return elapsed >= 6;
+    if (guest.id === "futoi") return elapsed >= 22;
+    if (guest.id === "vip") return elapsed >= 35;
+    if (guest.id === "claimer") return elapsed >= 20;
     return true;
   });
 }
 
 function makeGuest(type) {
-  const preferred = preferredColumnForGuest(type.id);
-  const favorite = preferred ?? Math.floor(Math.random() * COLS);
-  const vipTarget = type.id === "vip" ? favorite : null;
+  const favorite = preferredColumnForGuest(type.id) ?? Math.floor(Math.random() * COLS);
   return {
     ...type,
     favorite,
-    vipTarget,
+    vipTarget: null,
     serial: crypto.randomUUID ? crypto.randomUUID() : String(Math.random()),
   };
 }
@@ -171,36 +204,41 @@ function starterGuest() {
   return guest;
 }
 
+function tutorialGuest() {
+  return makeGuest(guestTypes.find((guest) => guest.id === "usui"));
+}
+
 function resetGame() {
   initAudio();
+  document.body.classList.remove("result-open");
   state.started = true;
   state.board = Array.from({ length: ROWS }, () => Array(COLS).fill(null));
   state.time = SHIFT_SECONDS;
   state.current = starterGuest();
-  state.next = weightedGuest();
-  state.selectedCol = bestColumnForGuest(state.current);
+  state.next = tutorialGuest();
+  state.selectedCol = TUTORIAL_COL;
   state.score = 0;
   state.ambient = 70;
   state.complaints = 0;
-  state.streaks = [0, 0, 0, 0, 0];
-  state.regulars = [];
   state.running = true;
   state.lastResult = null;
   state.placements = 0;
-  state.matches = 0;
-  state.bottles = 0;
-  state.champagnes = 0;
+  state.merges = 0;
+  state.bestChain = 0;
+  state.divineColumn = null;
+  state.feverUntil = 0;
+  state.feverCount = 0;
   state.autoDrops = 0;
-  state.maxColumnStreak = 0;
-  state.tickMs = 1700;
+  state.tutorialActive = true;
+  state.checkoutTutorialActive = false;
+  state.tutorialStep = 0;
   state.lastStep = performance.now();
   state.lastSecond = performance.now();
   setDropWindow(performance.now());
   overlay.classList.add("hidden");
   floatLayer.innerHTML = "";
-  showTutorial();
-  comboList.innerHTML = "";
-  messageEl.textContent = "推し席へポイ！";
+  showTutorial("3つ並べて育てろ！", "神客でフィーバー突入");
+  messageEl.textContent = TUTORIAL_STEPS[0];
   render();
 }
 
@@ -212,19 +250,11 @@ function startGame() {
 }
 
 function serviceTurns(guest, col) {
-  let turns = guest.base + 1;
-  const preferred = isPreferred(guest, col);
+  let turns = guest.base;
+  if (castMultiplier(guest, col) > 1) turns -= 2;
+  if (state.ambient <= 32) turns += 2;
 
-  if (preferred) turns -= 1;
-  if (!preferred) turns += guest.id === "vip" ? 3 : 1;
-  if (casts[col].name === "みじゅ" && guest.id === "futoi") turns -= 0.5;
-  if (casts[col].name === "ちゃき") turns -= 0.5;
-  if (casts[col].name === "ゆめ" && guest.id === "vip") turns -= 0.5;
-  if (casts[col].name === "なの") turns += 0.5;
-  if (state.ambient >= 82) turns -= 1;
-  if (state.ambient <= 32) turns += 1;
-
-  return Math.max(2, Math.ceil(turns));
+  return Math.max(5, Math.ceil(turns));
 }
 
 function tileForGuest(guest, col) {
@@ -233,19 +263,41 @@ function tileForGuest(guest, col) {
     turns: serviceTurns(guest, col),
     col,
     age: 0,
-    matched: isPreferred(guest, col),
-    vipMiss: guest.vipTarget !== null && col !== guest.vipTarget,
+    matched: castMultiplier(guest, col) > 1,
+    vipMiss: false,
   };
 }
 
 function placeCurrent(col = state.selectedCol, options = {}) {
   if (!state.running) return;
   initAudio();
+  if (state.checkoutTutorialActive) {
+    say("まずはなのをタップで会計!");
+    showFloat("下の女の子!", "warn");
+    render();
+    return;
+  }
+  if (state.tutorialActive && col !== TUTORIAL_COL) {
+    state.selectedCol = TUTORIAL_COL;
+    say("まずは光るなの列へ!");
+    showFloat("ここに置いて!", "warn");
+    render();
+    return;
+  }
 
   const row = lowestOpenRow(col);
   if (row === -1) {
-    changeAmbient(-10);
-    endGame("おじさんが入りきらない！空いている列を作ろう。", "列が満席");
+    const openCol = nearestOpenColumn(col);
+    if (columnHeights().every((height) => height >= ROWS)) {
+      endGame("おじさんが入りきらない！全列満席で営業終了。", "全列満席");
+      return;
+    }
+    changeAmbient(-8);
+    state.selectedCol = openCol;
+    setDropWindow();
+    say("その列は満席! 空いてる列へ");
+    showFloat("満席 -8", "warn");
+    render();
     return;
   }
 
@@ -254,15 +306,44 @@ function placeCurrent(col = state.selectedCol, options = {}) {
   const feedback = applyPlacementPressure(tile);
   state.placements += 1;
   if (options.auto) state.autoDrops += 1;
-  const comboTriggered = advanceCallGauge(tile);
-  if (!comboTriggered) {
-    showFloat(feedback.text, feedback.tone);
-    playSound(feedback.sound);
+  showFloat(feedback.text, feedback.tone);
+  playSound(feedback.sound);
+  checkMergesAndChain();
+  if (!state.running) return;
+
+  if (state.tutorialActive) {
+    advanceTutorial();
+    return;
   }
+
   state.current = state.next;
   state.next = weightedGuest();
   state.selectedCol = nearestOpenColumn(col);
   setDropWindow();
+  render();
+}
+
+function advanceTutorial() {
+  state.tutorialStep += 1;
+  if (state.tutorialStep < TUTORIAL_STEPS.length) {
+    state.current = state.next;
+    state.next = tutorialGuest();
+    state.selectedCol = TUTORIAL_COL;
+    setDropWindow();
+    say(TUTORIAL_STEPS[state.tutorialStep]);
+    render();
+    return;
+  }
+
+  state.tutorialActive = false;
+  state.checkoutTutorialActive = true;
+  state.current = weightedGuest();
+  state.next = weightedGuest();
+  state.selectedCol = TUTORIAL_COL;
+  setDropWindow();
+  showFloat("営業本番!", "good");
+  say("なのをタップして会計してみよう!");
+  showTutorial("キャストをタップで会計！", "なのを押して回収してみよう");
   render();
 }
 
@@ -276,30 +357,21 @@ function lowestOpenRow(col) {
 function applyPlacementPressure(tile) {
   const guest = tile.guest;
   const col = tile.col;
-  let feedback;
-  if (guest.id === "vip" && guest.vipTarget !== null && col !== guest.vipTarget) {
-    changeAmbient(-9);
-    say("指名外だよ！");
-    feedback = { text: "指名外 -9", tone: "bad", sound: "bad" };
-  } else if (col === guest.favorite || guest.id === "uwaki") {
-    changeAmbient(2);
-    const bonus = guest.id === "uwaki" ? 6 : 12;
-    state.score += bonus;
-    state.matches += 1;
-    feedback = { text: `${guest.id === "uwaki" ? "どこでもOK" : "推し一致"} +${formatMoney(bonus)}`, tone: "good", sound: "match" };
-  } else {
-    changeAmbient(-2);
-    feedback = { text: "推し違い -2", tone: "warn", sound: "place" };
-  }
-
+  const multiplier = castMultiplier(guest, col);
+  const feedback = multiplier > 1
+    ? { text: `回収なら x${formatMultiplier(multiplier)}`, tone: "good", sound: "match" }
+    : { text: "育成ポイ！", tone: "neutral", sound: "place" };
+  if (guest.id === "claimer") changeAmbient(-2);
+  else if (multiplier > 1) changeAmbient(1);
   say(guest.note);
   return feedback;
 }
 
 function stepService() {
   if (!state.running) return;
+  if (state.tutorialActive) return;
 
-  const speed = state.ambient >= 88 ? 2 : 1;
+  const speed = 1;
   const cleared = [];
 
   for (let row = ROWS - 1; row >= 0; row -= 1) {
@@ -309,11 +381,11 @@ function stepService() {
       tile.age += 1;
       tile.turns -= speed;
 
-      if (tile.guest.id === "claimer" && tile.age > 0 && tile.age % 3 === 0) {
+      if (tile.guest.id === "claimer" && tile.age > 0 && tile.age % 5 === 0) {
         state.complaints += 1;
-        changeAmbient(-10);
+        changeAmbient(-9);
         say("クレーム発生！");
-        showFloat("クレーム -10", "bad");
+        showFloat("クレーム -9", "bad");
         playSound("bad");
       }
 
@@ -325,9 +397,11 @@ function stepService() {
 
   for (const clear of cleared) clearTile(clear);
   collapseBoard();
+  if (cleared.length) checkMergesAndChain();
+  if (!state.running) return;
 
-  if (state.complaints >= 3) {
-    endGame("クレーマーを放置しすぎた！出禁が3回で営業終了。", "出禁3回");
+  if (state.complaints >= COMPLAINT_LIMIT) {
+    endGame("クレーマーを放置しすぎた！クレーム満タンで営業終了。", "クレーム満タン");
   }
 
   render();
@@ -336,87 +410,169 @@ function stepService() {
 function clearTile({ tile, row, col }) {
   state.board[row][col] = null;
   const guest = tile.guest;
-  const preferred = isPreferred(guest, col);
-  let points = guest.points + Math.round(state.ambient * 0.8);
-
-  if (preferred) points = Math.round(points * 1.25);
-  if (guest.id === "futoi" && casts[col].name === "みじゅ") points += 50;
-  if (guest.id === "vip" && casts[col].name === "ゆめ") points += 75;
+  const multiplier = castMultiplier(guest, col);
+  const airBonus = 1 + Math.max(0, state.ambient - 50) / 250;
+  const feverBonus = isFeverActive() ? 2 : 1;
+  let points = Math.round((guest.points + state.ambient * 0.8) * multiplier * airBonus * feverBonus);
+  if (col === 3) {
+    changeAmbient(8);
+    showColumnFloat(col, "空気 +8", "good");
+  }
+  if (guest.id === "kamikaku") {
+    points += col === 4 ? 2200 : 1200;
+  }
 
   state.score += points;
-  showColumnFloat(col, `+${formatMoney(points)}`, preferred ? "good" : "neutral");
+  showColumnFloat(col, `+${formatMoney(points)}`, multiplier > 1 ? "good" : "neutral");
 
-  if (casts[col].name === "いずも") changeAmbient(2);
-  if (guest.id === "futoi") changeAmbient(5);
-  if (guest.id === "claimer") changeAmbient(4);
-
-  maybeRegularize(guest, points);
+  if (guest.id === "futoi") changeAmbient(4);
+  if (guest.id === "kujou") changeAmbient(8);
+  if (guest.id === "claimer") changeAmbient(col === 1 ? 6 : -6);
 }
 
-function handleCombo(col) {
-  let triggered = false;
-  if (state.streaks[col] === 3) {
-    triggered = true;
-    state.bottles += 1;
-    changeAmbient(12);
-    speedColumn(col);
-    addCombo(`${casts[col].name}列`, "ボトル入り");
-    say("ボトル入り！");
-    showFloat("ボトル入り！", "good");
-    playSound("combo");
+function checkMergesAndChain() {
+  let depth = 0;
+  while (depth < 8) {
+    const merged = applyOneMerge();
+    if (!merged) break;
+    if (!state.running) {
+      depth += 1;
+      break;
+    }
+    collapseBoard();
+    depth += 1;
   }
 
-  if (state.streaks[col] > 0 && state.streaks[col] % 5 === 0) {
-    triggered = true;
-    state.champagnes += 1;
-    changeAmbient(22);
-    cheerOneEachColumn();
-    addCombo(`${casts[col].name}列`, "シャンパンコール");
-    say("シャンパン！");
-    showFloat("シャンパン！", "good");
-    playSound("combo");
-  }
-  return triggered;
-}
-
-function advanceCallGauge(tile) {
-  const col = tile.col;
-  if (!tile.matched) {
-    state.streaks[col] = Math.max(0, state.streaks[col] - 1);
-    return false;
-  }
-
-  state.streaks[col] += 1;
-  state.maxColumnStreak = Math.max(state.maxColumnStreak, state.streaks[col]);
-  return handleCombo(col);
-}
-
-function speedColumn(col) {
-  for (let row = 0; row < ROWS; row += 1) {
-    const tile = state.board[row][col];
-    if (tile) tile.turns = Math.max(1, tile.turns - 1);
+  if (depth > 0) {
+    state.bestChain = Math.max(state.bestChain, depth);
+    state.merges += depth;
+    changeAmbient(4 + depth * 2);
+    if (depth >= 2) showFloat(`${depth}連鎖！`, "grand");
   }
 }
 
-function cheerOneEachColumn() {
-  for (let col = 0; col < COLS; col += 1) {
-    for (let row = ROWS - 1; row >= 0; row -= 1) {
-      if (state.board[row][col]) {
-        state.board[row][col].turns = Math.max(1, state.board[row][col].turns - 1);
-        state.score += 20;
-        break;
-      }
+function applyOneMerge() {
+  const claimerGroup = findFirstMergeGroup(["claimer"], 2);
+  if (claimerGroup) {
+    mergeClaimers(claimerGroup);
+    return true;
+  }
+
+  for (let tier = 3; tier >= 0; tier -= 1) {
+    const type = guestTypes.find((guest) => guest.tier === tier && guest.id !== "kujou");
+    if (!type) continue;
+    const group = findFirstMergeGroup([type.id], 3);
+    if (group) {
+      mergeGroup(group, type);
+      return true;
     }
   }
+
+  return false;
 }
 
-function maybeRegularize(guest, points) {
-  if (state.regulars.length >= 7) return;
-  const chance = Math.min(0.28, points / 800);
-  if (Math.random() < chance && !state.regulars.some((item) => item.label === guest.label)) {
-    state.regulars.push({ label: guest.label, favorite: casts[guest.favorite].name });
-    say(`${guest.label}が常連に！`);
+function findFirstMergeGroup(ids, minSize = 3) {
+  const visited = new Set();
+  for (let row = ROWS - 1; row >= 0; row -= 1) {
+    for (let col = 0; col < COLS; col += 1) {
+      const tile = state.board[row][col];
+      if (!tile || !ids.includes(tile.guest.id)) continue;
+      const key = cellKey(row, col);
+      if (visited.has(key)) continue;
+      const group = connectedGroup(row, col, tile.guest.id);
+      group.forEach(([groupRow, groupCol]) => visited.add(cellKey(groupRow, groupCol)));
+      if (group.length >= minSize) return group;
+    }
   }
+  return null;
+}
+
+function connectedGroup(startRow, startCol, id) {
+  const queue = [[startRow, startCol]];
+  const visited = new Set();
+  const group = [];
+
+  while (queue.length) {
+    const [row, col] = queue.shift();
+    if (row < 0 || row >= ROWS || col < 0 || col >= COLS) continue;
+    const key = cellKey(row, col);
+    if (visited.has(key)) continue;
+    visited.add(key);
+
+    const tile = state.board[row][col];
+    if (!tile || tile.guest.id !== id) continue;
+
+    group.push([row, col]);
+    queue.push([row - 1, col], [row + 1, col], [row, col - 1], [row, col + 1]);
+  }
+
+  return group;
+}
+
+function mergeGroup(group, type) {
+  const nextType = guestTypes.find((guest) => guest.tier === type.tier + 1 && guest.id !== "kujou");
+  if (!nextType) return;
+  const [targetRow, targetCol] = mergeTarget(group);
+
+  group.forEach(([row, col]) => {
+    state.board[row][col] = null;
+  });
+  state.board[targetRow][targetCol] = tileForGuest(makeGuest(nextType), targetCol);
+
+  say(`${nextType.label}に進化！`);
+  showColumnFloat(targetCol, `${nextType.label}誕生！`, nextType.id === "kamikaku" ? "grand" : "good");
+  if (nextType.tier >= 2) showFloat(`${nextType.label}誕生!`, "grand");
+  playSound("combo");
+
+  if (nextType.id === "kamikaku") {
+    state.divineColumn = targetCol;
+    const multiplier = castMultiplier(nextType, targetCol);
+    const bonus = Math.round(nextType.points * multiplier + 2500);
+    state.score += bonus;
+    startFever(targetCol, bonus);
+  }
+}
+
+function startFever(col, bonus) {
+  state.feverUntil = Math.max(state.feverUntil, performance.now()) + FEVER_DURATION_MS;
+  state.feverCount += 1;
+  state.time = Math.min(SHIFT_SECONDS, state.time + 8);
+  changeAmbient(24);
+  document.body.classList.add("divine-burst");
+  window.setTimeout(() => document.body.classList.remove("divine-burst"), 1100);
+  setDropWindow();
+  say(`神客フィーバー! 会計売上2倍!`);
+  showFloat(`神客フィーバー +${formatMoney(bonus)}`, "grand");
+  showColumnFloat(col, "FEVER!", "grand");
+  playSound("combo");
+}
+
+function mergeClaimers(group) {
+  const [targetRow, targetCol] = mergeTarget(group);
+  const type = guestTypes.find((guest) => guest.id === "kujou");
+  group.forEach(([row, col]) => {
+    state.board[row][col] = null;
+  });
+  state.board[targetRow][targetCol] = tileForGuest(makeGuest(type), targetCol);
+  const bonus = 180;
+  state.score += bonus;
+  changeAmbient(16);
+  say("苦情仲間に逆転！ちゃき列で3倍！");
+  showColumnFloat(targetCol, `苦情仲間 +${formatMoney(bonus)}`, "good");
+  showFloat("ちゃき列で3倍!", "good");
+  playSound("combo");
+}
+
+function mergeTarget(group) {
+  return group.reduce((best, cell) => {
+    if (cell[0] > best[0]) return cell;
+    if (cell[0] === best[0] && Math.abs(cell[1] - state.selectedCol) < Math.abs(best[1] - state.selectedCol)) return cell;
+    return best;
+  }, group[0]);
+}
+
+function cellKey(row, col) {
+  return `${row}:${col}`;
 }
 
 function collapseBoard() {
@@ -434,19 +590,16 @@ function collapseBoard() {
 
 function changeAmbient(amount) {
   state.ambient = Math.max(0, Math.min(100, state.ambient + amount));
-  state.tickMs = Math.max(820, 1900 - state.ambient * 8);
 }
 
 function setDropWindow(now = performance.now()) {
   state.dropStarted = now;
-  state.dropWindow = Math.max(1200, 3900 - state.ambient * 20);
+  const feverBonus = isFeverActive(now) ? 900 : 0;
+  state.dropWindow = Math.max(2400, Math.min(5400, 2400 + state.ambient * 16 + feverBonus));
 }
 
-function addCombo(title, value) {
-  const item = document.createElement("li");
-  item.innerHTML = `<span>${title}</span><strong>${value}</strong>`;
-  comboList.prepend(item);
-  while (comboList.children.length > 5) comboList.lastElementChild.remove();
+function isFeverActive(now = performance.now()) {
+  return state.running && now < state.feverUntil;
 }
 
 function say(text) {
@@ -473,33 +626,43 @@ function showColumnFloat(col, text, tone = "neutral") {
   pop.addEventListener("animationend", () => pop.remove());
 }
 
-function isPreferred(guest, col) {
-  return targetColumns(guest).includes(col);
-}
-
 function placementRead(guest, col) {
-  if (guest.vipTarget !== null && col !== guest.vipTarget) return { icon: "×", label: "指名外", tone: "bad" };
-  if (isPreferred(guest, col)) return { icon: "◎", label: "推し一致", tone: "good" };
-  return { icon: "・", label: "通常接客", tone: "neutral" };
+  const multiplier = castMultiplier(guest, col);
+  if (multiplier > 1) return { icon: "×" + formatMultiplier(multiplier), label: `${casts[col].name}回収 x${formatMultiplier(multiplier)}`, tone: "good" };
+  if (col === 3) return { icon: "気", label: "空気回復", tone: "good" };
+  return { icon: "育", label: "育成中", tone: "neutral" };
 }
 
 function targetColumns(guest) {
   if (!guest) return [];
-  if (guest.id === "uwaki") return Array.from({ length: COLS }, (_, index) => index);
-  if (guest.vipTarget !== null) return [guest.vipTarget];
+  const affinityCols = castAffinities
+    .map((affinity, col) => (affinity.bestIds.includes(guest.id) ? col : null))
+    .filter((col) => col !== null);
+  if (state.ambient <= 45 && !affinityCols.includes(3)) affinityCols.push(3);
+  if (affinityCols.length) return affinityCols;
   return [preferredColumnForGuest(guest.id) ?? guest.favorite];
 }
 
 function preferredColumnForGuest(id) {
   const columns = {
+    jouren: 0,
     futoi: 0,
-    gachikoi: 1,
     claimer: 1,
+    kujou: 1,
     usui: 2,
-    doutan: 3,
+    kamikaku: 4,
     vip: 4,
   };
   return columns[id] ?? null;
+}
+
+function castMultiplier(guest, col) {
+  if (!guest || col < 0 || col >= COLS) return 1;
+  return castAffinities[col].bestIds.includes(guest.id) ? castAffinities[col].multiplier : 1;
+}
+
+function formatMultiplier(multiplier) {
+  return Number.isInteger(multiplier) ? String(multiplier) : multiplier.toFixed(1);
 }
 
 function bestColumnForGuest(guest, fallback = state.selectedCol) {
@@ -526,13 +689,6 @@ function nearestOpenColumn(fallback = state.selectedCol) {
   return openColumns[0]?.col ?? fallback;
 }
 
-function callReachForCol(col) {
-  const streak = state.streaks[col];
-  if (streak > 0 && streak % 5 === 4) return "champagne";
-  if (streak === 2) return "bottle";
-  return "";
-}
-
 function render() {
   renderBoard();
   renderCasts();
@@ -543,14 +699,14 @@ function render() {
   ambientFill.style.width = `${state.ambient}%`;
   document.body.classList.toggle("air-high", state.ambient >= 80);
   document.body.classList.toggle("air-low", state.ambient <= 30);
+  document.body.classList.toggle("fever", isFeverActive());
+  document.body.classList.toggle("complaint-high", state.complaints >= COMPLAINT_LIMIT - 1);
   scoreValue.textContent = formatMoney(state.score);
   bestValue.textContent = `ベスト ${formatMoney(state.bestScore)}`;
   timeValue.textContent = formatTime(state.time);
-  complaintValue.textContent = `${state.complaints}/3`;
-  complaintWarning.textContent = `あと${Math.max(0, 3 - state.complaints)}でGAME OVER`;
-  regularsEl.innerHTML = state.regulars.length
-    ? state.regulars.map((item) => `<span><b>${item.label}</b><small>推し: ${item.favorite}</small></span>`).join("")
-    : "<span><b>タカシン</b><small>推し: みじゅ</small></span><span><b>りょうた</b><small>推し: ちゃき</small></span><span><b>ケンジ</b><small>推し: なの</small></span><span><b>バイセン</b><small>指名: ゆめ</small></span>";
+  timeFill.style.width = `${Math.max(0, (state.time / SHIFT_SECONDS) * 100)}%`;
+  complaintValue.textContent = `${state.complaints}/${COMPLAINT_LIMIT}`;
+  complaintWarning.textContent = `あと${Math.max(0, COMPLAINT_LIMIT - state.complaints)}でGAME OVER`;
 }
 
 function renderBoard() {
@@ -568,9 +724,11 @@ function renderBoard() {
       cell.setAttribute("aria-label", `${col + 1}列 ${row + 1}段`);
       if (col === state.selectedCol) cell.classList.add("target");
       if (preferredCols.includes(col)) cell.classList.add("preferred-column");
-      const reach = callReachForCol(col);
-      if (reach) cell.classList.add(`${reach}-reach`);
-      if (row === landingRow && col === state.selectedCol && reach) cell.dataset.reach = reach === "champagne" ? "シャンパン!" : "ボトル!";
+      if (isMergeReachCell(row, col)) cell.classList.add("merge-reach");
+      if (row === landingRow && col === state.selectedCol && wouldMergeOnDrop(row, col, state.current)) {
+        cell.classList.add(state.current.id === "claimer" ? "claimer-reach" : "merge-reach");
+        cell.dataset.reach = state.current.id === "claimer" ? "仲間!" : "進化!";
+      }
       if (row === landingRow && col === state.selectedCol && selectedRead.tone === "good") cell.dataset.read = selectedRead.icon;
       if (row === landingRow && col === state.selectedCol) cell.classList.add("ghost");
       if (heights[col] >= ROWS - 1) cell.classList.add("column-warning");
@@ -594,28 +752,69 @@ function columnHeights() {
   ));
 }
 
+function isMergeReachCell(row, col) {
+  const tile = state.board[row][col];
+  if (!tile || tile.guest.id === "kamikaku" || tile.guest.id === "kujou") return false;
+  return connectedGroup(row, col, tile.guest.id).length >= 2;
+}
+
+function wouldMergeOnDrop(row, col, guest) {
+  if (!guest || row < 0 || guest.id === "kamikaku" || guest.id === "kujou") return false;
+  const minSize = guest.id === "claimer" ? 2 : 3;
+  const seen = new Set();
+  let connected = 1;
+  for (const [nextRow, nextCol] of [[row - 1, col], [row + 1, col], [row, col - 1], [row, col + 1]]) {
+    if (nextRow < 0 || nextRow >= ROWS || nextCol < 0 || nextCol >= COLS) continue;
+    const tile = state.board[nextRow][nextCol];
+    if (!tile || tile.guest.id !== guest.id) continue;
+    const group = connectedGroup(nextRow, nextCol, guest.id);
+    for (const [groupRow, groupCol] of group) {
+      const key = cellKey(groupRow, groupCol);
+      if (seen.has(key)) continue;
+      seen.add(key);
+      connected += 1;
+    }
+  }
+  return connected >= minSize;
+}
+
 function tileElement(tile) {
   const wrapper = document.createElement("div");
   const classes = ["tile"];
   classes.push(`guest-${tile.guest.id}`);
+  classes.push(`tier-${tile.guest.tier}`);
+  if (tile.guest.id === "kamikaku") classes.push("divine");
+  if (tile.guest.id === "kujou") classes.push("kujou");
   if (tile.matched) classes.push("matched");
   if (tile.vipMiss || tile.guest.id === "claimer") classes.push("danger");
   wrapper.className = classes.join(" ");
   wrapper.style.setProperty("--chip", tile.guest.color);
   wrapper.style.setProperty("--favorite", casts[tile.guest.favorite].color);
+  const countdown = complaintCountdown(tile);
   const claimerCue = tile.guest.id === "claimer"
-    ? `<span class="claim-cue">出禁まで${complaintCountdown(tile)}</span>`
+    ? `<span class="claim-cue${countdown <= 1 ? " urgent" : ""}">あと${countdown}</span>`
+    : "";
+  const kujouCue = tile.guest.id === "kujou"
+    ? `<span class="claim-cue kujou-cue">ちゃきx3</span>`
     : "";
   wrapper.innerHTML = `
     ${guestFace(tile.guest)}
+    <span class="tier-badge">${tierBadge(tile.guest)}</span>
     <span class="turns">${Math.max(0, tile.turns)}</span>
     ${claimerCue}
+    ${kujouCue}
   `;
   return wrapper;
 }
 
+function tierBadge(guest) {
+  if (guest.id === "claimer") return "怒";
+  if (guest.id === "kujou") return "仲";
+  return tierLabels[guest.tier] || "";
+}
+
 function complaintCountdown(tile) {
-  return 3 - (tile.age % 3);
+  return 5 - (tile.age % 5);
 }
 
 function renderCasts() {
@@ -625,19 +824,19 @@ function renderCasts() {
     const button = document.createElement("button");
     button.type = "button";
     button.className = `cast${col === state.selectedCol ? " active" : ""}${preferredCols.includes(col) ? " preferred" : ""}`;
-    const reach = callReachForCol(col);
-    if (reach) button.classList.add(`${reach}-reach`);
     button.style.setProperty("--cast", cast.color);
-    const call = nextCallInfo(col);
+    const height = columnHeights()[col];
+    if (height > 0) button.classList.add("can-checkout");
     button.innerHTML = `
       <img class="cast-face" src="${cast.asset}" alt="" aria-hidden="true">
       <strong>${cast.name}</strong>
       <span>${cast.trait}</span>
       <span>${cast.detail}</span>
-      <span class="call-state">${call.label}</span>
-      <span class="call-dots">${call.dots}</span>
+      <span class="checkout-hint">タップで会計</span>
+      <span class="call-dots">${columnDots(height)}</span>
     `;
     button.addEventListener("click", () => {
+      if (checkoutColumn(col)) return;
       state.selectedCol = col;
       render();
     });
@@ -645,14 +844,52 @@ function renderCasts() {
   });
 }
 
+function checkoutColumn(col) {
+  if (!state.running) return false;
+  if (state.checkoutTutorialActive && col !== TUTORIAL_COL) {
+    state.selectedCol = TUTORIAL_COL;
+    say("まずはなのをタップ!");
+    showFloat("なのを押して!", "warn");
+    render();
+    return true;
+  }
+  for (let row = ROWS - 1; row >= 0; row -= 1) {
+    const tile = state.board[row][col];
+    if (!tile) continue;
+    if (state.checkoutTutorialActive) tile.turns = 1;
+    tile.turns -= col === 3 ? 5 : 4;
+    showColumnFloat(col, "会計!", castMultiplier(tile.guest, col) > 1 || col === 3 ? "good" : "neutral");
+    playSound("match");
+    if (tile.turns <= 0) {
+      clearTile({ tile, row, col });
+      collapseBoard();
+      checkMergesAndChain();
+      setDropWindow();
+    }
+    if (state.checkoutTutorialActive) {
+      finishCheckoutTutorial();
+      return true;
+    }
+    render();
+    return true;
+  }
+  return false;
+}
+
+function finishCheckoutTutorial() {
+  state.checkoutTutorialActive = false;
+  state.selectedCol = bestColumnForGuest(state.current);
+  setDropWindow();
+  showFloat("会計OK!", "good");
+  say("本番開始! 3つで育てて高く会計!");
+  render();
+}
+
 function renderGuest(el, guest) {
   el.className = `guest-chip guest-${guest.id}${el === nextGuest ? " small" : ""}`;
   el.style.setProperty("--chip", guest.color);
   el.style.setProperty("--favorite", casts[guest.favorite].color);
   const read = el === currentGuest ? placementRead(guest, state.selectedCol) : null;
-  const target = guest.vipTarget !== null
-    ? `<span class="guest-target" style="--target:${casts[guest.vipTarget].color}">指名:${casts[guest.vipTarget].name}</span>`
-    : "";
   const targetLine = el === currentGuest ? `<span class="target-line">${targetLineForGuest(guest)}</span>` : "";
   const readout = read ? `<span class="placement ${read.tone}">${read.label}</span>` : "";
   const turns = serviceTurns(guest, state.selectedCol);
@@ -661,26 +898,38 @@ function renderGuest(el, guest) {
     ${read ? `<span class="relation-badge ${read.tone}">${read.icon}</span>` : ""}
     <span class="guest-name">${guest.label}</span>
     ${targetLine}
-    <span class="guest-meta"><span class="cast-dot"></span>推し:${casts[guest.favorite].name}${target}</span>
-    <span class="guest-meta guest-turns">満足ターン ${turns}</span>
+    <span class="guest-meta"><span class="cast-dot"></span>${read ? read.label : "3つで進化"}</span>
+    <span class="guest-meta guest-turns">回収まで ${turns}</span>
     ${readout}
   `;
 }
 
 function targetLineForGuest(guest) {
-  if (guest.id === "uwaki") return "推し→だれでも";
-  if (guest.vipTarget !== null) return `指名→${casts[guest.vipTarget].name}`;
-  return `推し→${casts[guest.favorite].name}`;
+  if (guest.id === "claimer") return "2つで苦情仲間";
+  if (guest.id === "kujou") return "ちゃき列で3倍";
+  if (guest.id === "kamikaku") return "会計2倍フィーバー";
+  const next = nextEvolution(guest);
+  return next ? `3つで${next.label}` : "高く回収";
 }
 
 function guestFace(guest) {
   return `
-    <img class="oji-face face-${guest.id}" src="assets/ojisan/${guest.id}.png" alt="" aria-hidden="true">
+    <img class="oji-face face-${guest.id}" src="${guest.asset || `assets/ojisan/${guest.id}.png`}" alt="" aria-hidden="true">
   `;
 }
 
-function showTutorial() {
+function nextEvolution(guest) {
+  if (guest.id === "claimer") return guestTypes.find((type) => type.id === "kujou");
+  if (guest.tier < 0 || guest.tier >= 4) return null;
+  return guestTypes.find((type) => type.tier === guest.tier + 1 && type.id !== "kujou");
+}
+
+function showTutorial(title = "3つ並べて育てろ！", copy = "神客でフィーバー突入") {
   if (!tutorial) return;
+  const titleEl = tutorial.querySelector("strong");
+  const copyEl = tutorial.querySelector("span");
+  if (titleEl) titleEl.textContent = title;
+  if (copyEl) copyEl.textContent = copy;
   tutorial.classList.remove("hide");
   if (state.tutorialTimer) clearTimeout(state.tutorialTimer);
   state.tutorialTimer = setTimeout(() => {
@@ -688,28 +937,31 @@ function showTutorial() {
   }, 3000);
 }
 
-function nextCallInfo(col) {
-  const streak = state.streaks[col];
-  let label = `ボトルあと${Math.max(0, 3 - Math.min(streak, 3))}`;
-  if (streak === 2) label = "次ボトル!";
-  if (streak >= 3) label = `シャンパンあと${5 - (streak % 5 || 5)}`;
-  if (streak > 0 && streak % 5 === 4) label = "次シャンパン!";
-  if (streak > 0 && streak % 5 === 0) label = "次コール待ち";
-  const filled = streak % 5 || (streak > 0 ? 5 : 0);
-  const dots = Array.from({ length: 5 }, (_, index) => (
-    `<i class="${index < filled ? "filled" : ""}"></i>`
+function columnDots(height) {
+  return Array.from({ length: ROWS }, (_, index) => (
+    `<i class="${index < height ? "filled" : ""}"></i>`
   )).join("");
-  return { label, dots };
 }
 
 function gameLoop(now) {
   if (state.running) {
+    if (state.tutorialActive || state.checkoutTutorialActive) {
+      dropFill.style.width = "100%";
+      requestAnimationFrame(gameLoop);
+      return;
+    }
+
     const dropProgress = Math.min(1, (now - state.dropStarted) / state.dropWindow);
     dropFill.style.width = `${Math.max(0, 100 - dropProgress * 100)}%`;
 
     if (dropProgress >= 1) {
       say("自動でポイ！");
       placeCurrent(state.selectedCol, { auto: true });
+    }
+
+    if (!state.running) {
+      requestAnimationFrame(gameLoop);
+      return;
     }
 
     if (now - state.lastSecond >= 1000) {
@@ -721,7 +973,7 @@ function gameLoop(now) {
       }
     }
 
-    if (now - state.lastStep >= state.tickMs) {
+    if (now - state.lastStep >= SERVICE_TICK_MS) {
       state.lastStep = now;
       stepService();
     }
@@ -732,25 +984,38 @@ function gameLoop(now) {
 
 function endGame(copy, reason = "営業終了") {
   state.running = false;
+  document.body.classList.add("result-open");
+  floatLayer.innerHTML = "";
   const bestBefore = state.bestScore;
   updateBestScore();
   const title = deriveResultTitle(reason, state.score > bestBefore);
   state.lastResult = {
     score: state.score,
     ambient: Math.round(state.ambient),
-    regulars: state.regulars.length,
+    chain: state.bestChain,
+    merges: state.merges,
     reason,
     title,
   };
   resultTitle.textContent = title;
-  resultReason.textContent = `敗因: ${reason}`;
+  resultReason.textContent = `終了理由: ${reason}`;
   document.querySelector("#resultCopy").textContent = copy;
   document.querySelector("#finalScore").textContent = formatMoney(state.score);
   document.querySelector("#finalAmbient").textContent = Math.round(state.ambient);
-  document.querySelector("#finalRegulars").textContent = state.regulars.length;
+  document.querySelector("#finalChain").textContent = `${state.bestChain}連鎖`;
+  document.querySelector("#finalMerges").textContent = state.merges;
+  document.querySelector("#finalHint").textContent = resultHint(reason);
   overlay.classList.remove("hidden");
   playSound("gameover");
   render();
+}
+
+function resultHint(reason) {
+  if (state.feverCount > 0) return "神客フィーバー中の会計は売上2倍。次はフィーバー中に高ランク客を回収しよう。";
+  if (state.bestChain >= 3) return "連鎖の形はできてる。VIPを3つ集めたら神客が見える。";
+  if (state.merges >= 4) return "育成は順調。高ランク客はゆめ列で回収すると売上が伸びる。";
+  if (state.complaints >= COMPLAINT_LIMIT) return "クレーマーは2つで苦情仲間。ちゃき列で会計すると強い。";
+  return "まずは薄客3つで常連、常連3つで太客を狙おう。";
 }
 
 function loadBestScore() {
@@ -772,13 +1037,14 @@ function updateBestScore() {
 }
 
 function deriveResultTitle(reason, isBest) {
-  if (state.champagnes >= 2) return "シャンパン職人";
-  if (state.bottles >= 3) return "ボトル回しの名人";
+  if (state.feverCount >= 2) return "神客フィーバー職人";
+  if (state.feverCount >= 1) return "神客フィーバー営業";
+  if (state.bestChain >= 4) return "連鎖営業マスター";
+  if (state.merges >= 10) return "おじさん育成王";
   if (state.complaints === 0 && state.ambient >= 80) return "空気よすぎ店長";
-  if (state.matches >= 18) return "推し席マスター";
   if (state.autoDrops >= 5) return "ながら営業";
-  if (reason === "出禁3回") return "出禁対応係";
-  if (reason === "列が満席") return "満卓パニック";
+  if (reason === "クレーム満タン") return "クレーム対応係";
+  if (reason === "全列満席") return "満卓パニック";
   if (isBest) return "本日の伝説営業";
   return "本日の営業終了";
 }
@@ -839,10 +1105,11 @@ function shareResult() {
   const result = state.lastResult || {
     score: state.score,
     ambient: Math.round(state.ambient),
-    regulars: state.regulars.length,
+    chain: state.bestChain,
+    merges: state.merges,
     reason: "営業中",
   };
-  const text = `おじさんポイポイ！ ${result.title || "本日の営業終了"} / 売上${formatMoney(result.score)} / 空気${result.ambient}% / 常連${result.regulars}人 #おじさんポイポイ`;
+  const text = `おじさんポイポイ！ ${result.title || "本日の営業終了"} / 売上${formatMoney(result.score)} / ${result.chain || 0}連鎖 / 進化${result.merges || 0}回 #おじさんポイポイ`;
   const url = "https://judo-zz.github.io/concafe-ojisan-puzzle/";
   const shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`;
   window.open(shareUrl, "_blank", "noopener,noreferrer");
