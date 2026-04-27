@@ -140,10 +140,12 @@ button {
   height: 100%;
   display: grid;
   justify-items: center;
-  grid-template-rows: auto minmax(0, 1fr) auto auto auto;
-  gap: clamp(8px, 1.55svh, 15px);
+  align-content: center;
+  grid-template-rows: auto auto auto auto;
+  gap: clamp(18px, 4.2svh, 42px);
   text-align: center;
   position: relative;
+  padding: clamp(40px, 8svh, 80px) 0;
 }
 
 .start-badge {
@@ -201,84 +203,15 @@ h1 {
 
 .title-stage {
   width: 100%;
-  min-height: min(46svh, 390px);
+  min-height: min(26svh, 230px);
   display: grid;
   place-items: center;
   position: relative;
 }
 
-.start-oji {
-  position: absolute;
-  width: clamp(54px, 17vw, 82px);
-  aspect-ratio: 1;
-  object-fit: contain;
-  filter:
-    drop-shadow(0 0 0 #fff)
-    drop-shadow(0 5px 0 rgba(53, 40, 31, 0.18));
-  z-index: 1;
-}
-
-.start-oji-futoi {
-  left: 0;
-  top: 13%;
-  width: clamp(72px, 22vw, 104px);
-  transform: rotate(-9deg);
-}
-
-.start-oji-usui {
-  right: 3%;
-  top: 12%;
-  transform: rotate(8deg);
-}
-
-.start-oji-vip {
-  left: 0;
-  top: 48%;
-  transform: rotate(-10deg);
-}
-
-.start-oji-claimer {
-  right: 0;
-  top: 49%;
-  transform: rotate(8deg);
-}
-
-.start-oji-shy {
-  left: 9%;
-  bottom: 0;
-  transform: rotate(8deg);
-}
-
-.start-oji-festival {
-  right: 11%;
-  bottom: 0;
-  transform: rotate(-7deg);
-}
-
 .title-stage h1 {
   position: relative;
   z-index: 2;
-}
-
-.start-casts {
-  width: 100%;
-  display: flex;
-  align-items: end;
-  justify-content: space-between;
-  gap: 2px;
-  padding: 4px 4px 0;
-  border-radius: 20px;
-  background:
-    radial-gradient(circle at 14% 82%, rgba(255, 111, 159, 0.2), transparent 12%),
-    radial-gradient(circle at 70% 64%, rgba(100, 212, 191, 0.22), transparent 12%);
-}
-
-.start-casts img {
-  width: min(18.6%, 68px);
-  aspect-ratio: 0.8;
-  object-fit: contain;
-  object-position: bottom;
-  filter: drop-shadow(0 4px 0 rgba(53, 40, 31, 0.16));
 }
 
 .start-deco {
@@ -350,7 +283,8 @@ h1 {
 }
 
 .start-button,
-.restart-button {
+.restart-button,
+.top-button {
   display: grid;
   place-items: center;
   border: 4px solid var(--line);
@@ -372,16 +306,27 @@ h1 {
   z-index: 3;
 }
 
-.restart-button {
+.restart-button,
+.top-button {
   position: absolute;
   z-index: 5;
   top: 8px;
-  right: 8px;
   min-width: 62px;
   min-height: 30px;
   border-width: 3px;
   border-radius: 12px;
   font-size: 0.72rem;
+}
+
+.restart-button {
+  right: 8px;
+}
+
+.top-button {
+  left: 8px;
+  min-width: 48px;
+  background: linear-gradient(#75dfca, #55c9b7);
+  box-shadow: 0 5px 0 #389c8e, inset 0 2px rgba(255, 255, 255, 0.5);
 }
 
 .hud {

@@ -411,6 +411,23 @@ function startGame() {
   resetGame();
 }
 
+function returnToTop() {
+  state.running = false;
+  state.started = false;
+  state.tutorialActive = false;
+  state.checkoutTutorialActive = false;
+  state.lastResult = null;
+  document.body.classList.remove("result-open", "air-high", "air-low", "fever", "complaint-high");
+  if (state.tutorialTimer) clearTimeout(state.tutorialTimer);
+  state.tutorialTimer = null;
+  overlay.classList.add("hidden");
+  hideTutorial();
+  floatLayer.innerHTML = "";
+  gamePanel.hidden = true;
+  startScreen.hidden = false;
+  setDifficulty(state.difficulty);
+}
+
 function setDifficulty(value) {
   if (!difficulties[value] || state.running) return;
   state.difficulty = value;
@@ -901,7 +918,7 @@ function renderEvolutionBar() {
     .map((guest) => materialShortLabel(guest.id))
     .join("・");
   evolutionBar.innerHTML = `
-    <span class="evolution-materials">素材: ${materials}</span>
+    <span class="evolution-materials">${materials}</span>
     <i>→</i>
     <span>常連</span>
     <i>→</i>
@@ -1075,16 +1092,12 @@ function checkoutColumn(col) {
   for (let row = ROWS - 1; row >= 0; row -= 1) {
     const tile = state.board[row][col];
     if (!tile) continue;
-    if (state.checkoutTutorialActive) tile.turns = 1;
-    tile.turns -= col === 3 ? 5 : 4;
     showColumnFloat(col, "会計!", castMultiplier(tile.guest, col) > 1 || col === 3 ? "good" : "neutral");
     playSound("match");
-    if (tile.turns <= 0) {
-      clearTile({ tile, row, col });
-      collapseBoard();
-      checkMergesAndChain();
-      setDropWindow();
-    }
+    clearTile({ tile, row, col });
+    collapseBoard();
+    checkMergesAndChain();
+    setDropWindow();
     if (state.checkoutTutorialActive) {
       finishCheckoutTutorial();
       return true;
@@ -1381,6 +1394,7 @@ document.querySelector("#leftButton").addEventListener("click", () => moveSelect
 document.querySelector("#rightButton").addEventListener("click", () => moveSelection(1));
 document.querySelector("#dropButton").addEventListener("click", () => placeCurrent());
 document.querySelector("#startButton").addEventListener("click", startGame);
+document.querySelector("#topButton").addEventListener("click", returnToTop);
 document.querySelector("#restartButton").addEventListener("click", resetGame);
 document.querySelector("#againButton").addEventListener("click", resetGame);
 difficultyButtons.forEach((button) => {
